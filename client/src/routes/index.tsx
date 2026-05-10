@@ -50,8 +50,8 @@ const optionData = [
 
 function Landing() {
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
+    <div className="min-h-screen flex flex-col bg-background">
+      <Navbar variant="marketing" />
       <main className="flex-1">
         <Hero />
         <LivePreview />
@@ -73,7 +73,7 @@ function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <Badge variant="outline" className="gap-1.5 border-primary/30 bg-primary/5 text-primary">
+          <Badge variant="outline" className="gap-1.5 border-primary/30 bg-primary/5 text-primary rounded-full px-4 py-1">
             <Sparkles className="h-3 w-3" /> New: Realtime analytics 2.0
           </Badge>
         </motion.div>
@@ -101,10 +101,10 @@ function Hero() {
           transition={{ duration: 0.6, delay: 0.25 }}
           className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3"
         >
-          <Button size="lg" asChild className="gradient-primary shadow-elegant border-0 h-12 px-6 text-base">
+          <Button size="lg" asChild className="gradient-primary shadow-elegant border-0 h-12 px-8 text-base rounded-xl">
             <Link to="/signup">Create a poll <ArrowRight className="h-4 w-4 ml-1" /></Link>
           </Button>
-          <Button size="lg" variant="outline" asChild className="h-12 px-6 text-base">
+          <Button size="lg" variant="outline" asChild className="h-12 px-8 text-base rounded-xl">
             <Link to="/p/demo-1">View live demo</Link>
           </Button>
         </motion.div>
@@ -132,7 +132,7 @@ function LivePreview() {
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
         >
-          <Card className="p-6 shadow-soft border-border/60 h-full">
+          <Card className="p-6 shadow-soft border-border/60 h-full rounded-2xl">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted-foreground">Live responses</p>
@@ -166,13 +166,13 @@ function LivePreview() {
           transition={{ duration: 0.5, delay: 0.1 }}
           className="md:col-span-2"
         >
-          <Card className="p-6 shadow-soft border-border/60 h-full">
+          <Card className="p-6 shadow-soft border-border/60 h-full rounded-2xl">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted-foreground uppercase tracking-wider">Question results</p>
                 <p className="text-base font-semibold mt-1">Which framework do you reach for first?</p>
               </div>
-              <Badge className="gradient-primary border-0 text-primary-foreground">Realtime</Badge>
+              <Badge className="gradient-primary border-0 text-primary-foreground rounded-full">Realtime</Badge>
             </div>
             <div className="h-56 mt-4 -mx-2">
               <ResponsiveContainer width="100%" height="100%">
@@ -210,7 +210,7 @@ function Features() {
   return (
     <section id="features" className="mx-auto max-w-7xl px-4 sm:px-6 pb-24">
       <div className="text-center mb-12">
-        <Badge variant="outline" className="border-primary/30 text-primary bg-primary/5">Features</Badge>
+        <Badge variant="outline" className="border-primary/30 text-primary bg-primary/5 rounded-full px-4 py-1">Features</Badge>
         <h2 className="mt-4 text-4xl md:text-5xl font-bold tracking-tight">Everything you need, nothing you don't</h2>
         <p className="mt-3 text-muted-foreground max-w-2xl mx-auto">
           A polling platform built on three principles: fast, beautiful, and respectful of your audience's time.
@@ -225,7 +225,7 @@ function Features() {
             viewport={{ once: true, margin: "-50px" }}
             transition={{ duration: 0.4, delay: i * 0.05 }}
           >
-            <Card className="p-6 h-full border-border/60 hover:shadow-elegant hover:border-primary/30 transition-all group">
+            <Card className="p-6 h-full border-border/60 hover:shadow-elegant hover:border-primary/30 transition-all group rounded-2xl">
               <div className="h-11 w-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
                 <f.icon className="h-5 w-5" />
               </div>
@@ -251,7 +251,7 @@ function CTA() {
           <p className="mt-4 text-primary-foreground/80 max-w-xl mx-auto">
             Join thousands of teams using PulsePoll to make better decisions, faster.
           </p>
-          <Button size="lg" asChild className="mt-8 bg-background text-foreground hover:bg-background/90 h-12 px-7">
+          <Button size="lg" asChild className="mt-8 bg-background text-foreground hover:bg-background/90 h-12 px-8 rounded-xl">
             <Link to="/signup">Create your first poll <ArrowRight className="h-4 w-4 ml-1" /></Link>
           </Button>
         </div>
@@ -270,10 +270,10 @@ function Footer() {
           <span>© 2026</span>
         </div>
         <div className="flex items-center gap-6">
-          <a href="#features" className="hover:text-foreground">Features</a>
-          <a href="#" className="hover:text-foreground">Privacy</a>
-          <a href="#" className="hover:text-foreground">Terms</a>
-          <a href="#" className="hover:text-foreground">Contact</a>
+          <a href="#features" className="hover:text-foreground transition-colors">Features</a>
+          <a href="#" className="hover:text-foreground transition-colors">Privacy</a>
+          <a href="#" className="hover:text-foreground transition-colors">Terms</a>
+          <a href="#" className="hover:text-foreground transition-colors">Contact</a>
         </div>
       </div>
     </footer>

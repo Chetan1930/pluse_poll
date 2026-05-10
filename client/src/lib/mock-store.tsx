@@ -24,6 +24,7 @@ type User = { name: string; email: string } | null;
 
 type Ctx = {
   user: User;
+  isHydrated: boolean;
   login: (email: string, name?: string) => void;
   logout: () => void;
   polls: Poll[];
@@ -73,90 +74,61 @@ const seedPolls = (): Poll[] => [
       },
     ],
   },
-  {
-    id: "demo-2",
-    title: "Team retro: how was this sprint?",
-    description: "Quick pulse check before Friday's retro.",
-    createdAt: new Date(Date.now() - 86400000 * 7).toISOString(),
-    expiresAt: new Date(Date.now() - 86400000).toISOString(),
-    anonymous: false,
-    status: "expired",
-    responses: 24,
-    resultsPublic: false,
-    questions: [
-      {
-        id: "q1",
-        text: "Overall sprint feeling?",
-        required: true,
-        options: [
-          { id: "o1", text: "🚀 Crushed it", votes: 10 },
-          { id: "o2", text: "🙂 Solid", votes: 9 },
-          { id: "o3", text: "😐 Meh", votes: 4 },
-          { id: "o4", text: "😩 Rough", votes: 1 },
-        ],
-      },
-    ],
-  },
-  {
-    id: "demo-3",
-    title: "Pick our next product feature",
-    description: "Vote on what we should ship next quarter.",
-    createdAt: new Date(Date.now() - 86400000 * 12).toISOString(),
-    expiresAt: null,
-    anonymous: true,
-    status: "published",
-    responses: 3412,
-    resultsPublic: true,
-    questions: [
-      {
-        id: "q1",
-        text: "Which feature excites you most?",
-        required: true,
-        options: [
-          { id: "o1", text: "AI Insights", votes: 1422 },
-          { id: "o2", text: "Embeddable widgets", votes: 980 },
-          { id: "o3", text: "Slack integration", votes: 612 },
-          { id: "o4", text: "Custom branding", votes: 398 },
-        ],
-      },
-    ],
-  },
 ];
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User>(null);
   const [polls, setPolls] = useState<Poll[]>([]);
   const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [isHydrated, setIsHydrated] = useState(false);
 
+  // Initial hydration from localStorage
   useEffect(() => {
     if (typeof window === "undefined") return;
+    
     const u = localStorage.getItem("pp_user");
-    if (u) setUser(JSON.parse(u));
+    if (u) {
+      try {
+        setUser(JSON.parse(u));
+      } catch (e) {
+        localStorage.removeItem("pp_user");
+      }
+    }
+
     const p = localStorage.getItem("pp_polls");
     setPolls(p ? JSON.parse(p) : seedPolls());
+
     const t = (localStorage.getItem("pp_theme") as "light" | "dark") || "light";
     setTheme(t);
     document.documentElement.classList.toggle("dark", t === "dark");
+    
+    setIsHydrated(true);
   }, []);
 
+  // Persist polls when they change
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (polls.length) localStorage.setItem("pp_polls", JSON.stringify(polls));
-  }, [polls]);
+    if (!isHydrated) return;
+    localStorage.setItem("pp_polls", JSON.stringify(polls));
+  }, [polls, isHydrated]);
 
   const login = (email: string, name?: string) => {
     const u = { email, name: name || email.split("@")[0] };
     setUser(u);
     localStorage.setItem("pp_user", JSON.stringify(u));
   };
+
   const logout = () => {
     setUser(null);
     localStorage.removeItem("pp_user");
   };
+
   const addPoll = (p: Poll) => setPolls((cur) => [p, ...cur]);
+  
   const updatePoll = (id: string, patch: Partial<Poll>) =>
     setPolls((cur) => cur.map((p) => (p.id === id ? { ...p, ...patch } : p)));
+    
   const deletePoll = (id: string) => setPolls((cur) => cur.filter((p) => p.id !== id));
+  
   const vote = (pollId: string, answers: Record<string, string>) =>
     setPolls((cur) =>
       cur.map((p) => {
@@ -174,6 +146,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return { ...p, questions, responses: p.responses + 1 };
       }),
     );
+
   const toggleTheme = () => {
     const next = theme === "light" ? "dark" : "light";
     setTheme(next);
@@ -183,7 +156,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   return (
     <StoreCtx.Provider
-      value={{ user, login, logout, polls, addPoll, updatePoll, deletePoll, vote, theme, toggleTheme }}
+      value={{ 
+        user, 
+        isHydrated,
+        login, 
+        logout, 
+        polls, 
+        addPoll, 
+        updatePoll, 
+        deletePoll, 
+        vote, 
+        theme, 
+        toggleTheme 
+      }}
     >
       {children}
     </StoreCtx.Provider>
