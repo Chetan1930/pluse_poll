@@ -16,10 +16,10 @@ import responseRoutes from './routes/responseRoutes.js';
 const app = express();
 const httpServer = http.createServer(app);
 
-// ─── Socket.IO ────────────────────────────────────────────────────────────────
+// ─── Socket.IO ────────
 initSocket(httpServer);
 
-// ─── Global Middleware ────────────────────────────────────────────────────────
+//Global Middleware 
 app.use(
   cors({
     origin: process.env.CLIENT_URL?.split(',').map((o) => o.trim()) || 'http://localhost:5173',

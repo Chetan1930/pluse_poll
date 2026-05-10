@@ -20,7 +20,7 @@ import { Badge } from "@/components/ui/badge";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "PulsePoll — Professional Feedback & Real-time Insights" },
+      { title: "PulsePoll - Professional Feedback & Real-time Insights" },
       { name: "description", content: "The modern standard for gathering feedback. Create beautiful polls, analyze results in real-time, and make data-driven decisions." },
     ],
   }),
@@ -58,7 +58,7 @@ function Hero() {
               Trusted by 500+ forward-thinking teams
             </Badge>
           </motion.div>
-          
+
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -67,17 +67,17 @@ function Hero() {
           >
             Gather feedback that <span className="text-primary">actually matters.</span>
           </motion.h1>
-          
+
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto leading-relaxed"
           >
-            PulsePoll is the professional standard for real-time polling. Create beautiful, 
+            PulsePoll is the professional standard for real-time polling. Create beautiful,
             high-conversion surveys and watch insights stream in instantly.
           </motion.p>
-          
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -173,7 +173,7 @@ function Features() {
             Everything you need to gather, analyze, and act on feedback in one powerful platform.
           </p>
         </div>
-        
+
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {features.map((f, i) => (
             <motion.div
@@ -233,16 +233,16 @@ function Footer() {
             </div>
             <span className="text-xl font-bold tracking-tight">PulsePoll</span>
           </div>
-          
+
           <nav className="flex flex-wrap justify-center gap-8 text-sm font-medium text-muted-foreground">
             <a href="#features" className="hover:text-foreground transition-colors">Features</a>
             <a href="#" className="hover:text-foreground transition-colors">Privacy Policy</a>
             <a href="#" className="hover:text-foreground transition-colors">Terms of Service</a>
             <a href="#" className="hover:text-foreground transition-colors">Contact Support</a>
           </nav>
-          
+
           <div className="text-sm text-muted-foreground">
-            © 2026 PulsePoll Inc. All rights reserved.
+            (c) 2026 PulsePoll Inc. All rights reserved.
           </div>
         </div>
       </div>

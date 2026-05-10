@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { useStore } from "@/lib/mock-store";
+import { useStore } from "@/lib/api-store";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/signup")({
@@ -15,7 +15,7 @@ export const Route = createFileRoute("/signup")({
 });
 
 function Signup() {
-  const { login } = useStore();
+  const { register } = useStore();
   const navigate = useNavigate();
   const [show, setShow] = useState(false);
   const [name, setName] = useState("");
@@ -23,7 +23,7 @@ function Signup() {
   const [pw, setPw] = useState("");
   const [errs, setErrs] = useState<Record<string, string>>({});
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const e2: Record<string, string> = {};
     if (name.trim().length < 2) e2.name = "Tell us your name";
@@ -31,9 +31,13 @@ function Signup() {
     if (pw.length < 6) e2.pw = "Min 6 characters";
     setErrs(e2);
     if (Object.keys(e2).length) return;
-    login(email, name);
-    toast.success("Account created — welcome!");
-    navigate({ to: "/dashboard" });
+    try {
+      await register(name, email, pw);
+      toast.success("Account created - welcome!");
+      navigate({ to: "/dashboard" });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to create account");
+    }
   };
 
   return (

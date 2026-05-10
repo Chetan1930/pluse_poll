@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { BarChart3, LayoutDashboard, PlusCircle, Bell, Search, Sun, Moon, Menu } from "lucide-react";
-import { useStore } from "@/lib/mock-store";
+import { useAuth } from "@/lib/auth-store";
 import { Button } from "@/components/ui/button";
 import { UserMenu } from "@/components/user-menu";
 import { useEffect } from "react";
@@ -58,7 +58,7 @@ function SidebarContent({ path }: { path: string }) {
 }
 
 function DashLayout() {
-  const { user, isHydrated, theme, toggleTheme } = useStore();
+  const { user, isHydrated, theme, toggleTheme } = useAuth();
   const navigate = useNavigate();
   const path = useRouterState({ select: (s) => s.location.pathname });
 
@@ -72,7 +72,6 @@ function DashLayout() {
 
   return (
     <div className="min-h-screen flex bg-background">
-      {/* Desktop Sidebar */}
       <aside className="hidden md:flex w-64 flex-col border-r border-border/60 bg-sidebar p-4">
         <SidebarContent path={path} />
       </aside>
@@ -94,7 +93,7 @@ function DashLayout() {
               <div className="relative w-full hidden sm:block">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <input
-                  placeholder="Search polls…"
+                  placeholder="Search polls..."
                   className="w-full h-9 rounded-xl border border-border bg-background/60 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/40 transition-all"
                 />
               </div>

@@ -1,8 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMemo, useState } from "react";
-import { useAuth } from "@/lib/auth-store";
-import { useMyPolls, useDeletePoll } from "@/hooks/use-polls";
+import { useStore } from "@/lib/api-store";
 import { StatsCard } from "@/components/stats-card";
 import { PollCard } from "@/components/poll-card";
 import { Button } from "@/components/ui/button";
@@ -23,13 +22,12 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/dashboard/")({
-  head: () => ({ meta: [{ title: "Dashboard — PulsePoll" }, { name: "description", content: "Your polls and analytics" }] }),
+  head: () => ({ meta: [{ title: "Dashboard - PulsePoll" }, { name: "description", content: "Your polls and analytics" }] }),
   component: Dashboard,
 });
 
 function Dashboard() {
-  const { data: polls = [], isLoading } = useMyPolls();
-  const deleteMutation = useDeletePoll();
+  const { polls, loadingPolls, deletePoll } = useStore();
   const [filter, setFilter] = useState<"all" | "active" | "expired" | "published">("all");
   const [q, setQ] = useState("");
 
@@ -37,33 +35,46 @@ function Dashboard() {
     total: polls.length,
     responses: polls.reduce((s, p) => s + (p.responses || 0), 0),
     active: polls.filter((p) => !p.expiresAt || new Date(p.expiresAt) > new Date()).length,
-    published: polls.filter((p) => p.resultsPublished).length,
+    published: polls.filter((p) => p.resultsPublic).length,
   }), [polls]);
 
   const filtered = polls.filter((p) => {
     const isExpired = p.expiresAt && new Date(p.expiresAt) < new Date();
     if (filter === "active" && isExpired) return false;
     if (filter === "expired" && !isExpired) return false;
-    if (filter === "published" && !p.resultsPublished) return false;
+    if (filter === "published" && !p.resultsPublic) return false;
     if (q && !p.title.toLowerCase().includes(q.toLowerCase())) return false;
     return true;
   });
 
   const handleDelete = async (id: string) => {
     try {
-      await deleteMutation.mutateAsync(id);
+      await deletePoll(id);
       toast.success("Poll deleted");
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Unable to delete poll");
     }
   };
 
-  const trend = Array.from({ length: 14 }, (_, i) => ({
-    day: `D${i + 1}`,
-    v: Math.round(50 + Math.sin(i / 2) * 30 + Math.random() * 40 + i * 6),
+  const trend = Array.from({ length: 14 }, (_, index) => {
+    const day = new Date();
+    day.setDate(day.getDate() - (13 - index));
+    const key = day.toISOString().slice(0, 10);
+    return {
+      day: day.toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+      v: polls
+        .filter((poll) => poll.createdAt.slice(0, 10) === key)
+        .reduce((sum, poll) => sum + poll.responses, 0),
+    };
+  });
+
+  const activity = polls.slice(0, 4).map((poll) => ({
+    t: new Date(poll.createdAt).toLocaleDateString(),
+    txt: `${poll.title} has ${poll.responses.toLocaleString()} responses`,
+    icon: poll.resultsPublic ? CheckCircle2 : poll.status === "expired" ? Clock : Users,
   }));
 
-  if (isLoading) {
+  if (loadingPolls) {
     return (
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex justify-between items-center">
@@ -71,7 +82,7 @@ function Dashboard() {
           <Skeleton className="h-10 w-32" />
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-32 w-full" />)}
+          {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-32 w-full" />)}
         </div>
       </div>
     );
@@ -82,7 +93,7 @@ function Dashboard() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Overview</h1>
-          <p className="text-muted-foreground text-sm mt-1">Your polls and pulse — at a glance.</p>
+          <p className="text-muted-foreground text-sm mt-1">Your polls and pulse - at a glance.</p>
         </div>
         <Button asChild className="gradient-primary border-0 shadow-elegant">
           <Link to="/dashboard/create"><Plus className="h-4 w-4 mr-1" /> New poll</Link>
@@ -91,7 +102,7 @@ function Dashboard() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatsCard label="Total polls" value={stats.total} icon={FileText} delay={0} />
-        <StatsCard label="Total responses" value={stats.responses.toLocaleString()} icon={Users} accent="primary" trend="● Live" delay={0.05} />
+        <StatsCard label="Total responses" value={stats.responses.toLocaleString()} icon={Users} accent="primary" trend="Backend" delay={0.05} />
         <StatsCard label="Active" value={stats.active} icon={Sparkles} accent="success" delay={0.1} />
         <StatsCard label="Published" value={stats.published} icon={CheckCircle2} accent="warning" delay={0.15} />
       </div>
@@ -104,7 +115,7 @@ function Dashboard() {
               <p className="text-xs text-muted-foreground">Last 14 days</p>
             </div>
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <span className="h-2 w-2 rounded-full bg-success animate-pulse" /> Live
+              <span className="h-2 w-2 rounded-full bg-success" /> Backend
             </div>
           </div>
           <div className="h-64">
@@ -130,12 +141,7 @@ function Dashboard() {
           <h3 className="font-semibold">Recent activity</h3>
           <p className="text-xs text-muted-foreground">Latest pulse from your polls</p>
           <ul className="mt-4 space-y-3">
-            {[
-              { t: "2m ago", txt: "12 new responses on Framework poll", icon: Users },
-              { t: "1h ago", txt: "Sprint retro poll expired", icon: Clock },
-              { t: "3h ago", txt: "Results published for Roadmap vote", icon: CheckCircle2 },
-              { t: "Yesterday", txt: "New poll created: Onboarding survey", icon: BarChart3 },
-            ].map((a, i) => (
+            {(activity.length ? activity : [{ t: "Now", txt: "Create your first poll to see activity here", icon: BarChart3 }]).map((a, i) => (
               <motion.li
                 key={i}
                 initial={{ opacity: 0, x: 8 }}
@@ -165,7 +171,7 @@ function Dashboard() {
             <TabsTrigger value="expired">Expired</TabsTrigger>
           </TabsList>
         </Tabs>
-        <Input placeholder="Filter by title…" value={q} onChange={(e) => setQ(e.target.value)} className="sm:max-w-xs" />
+        <Input placeholder="Filter by title..." value={q} onChange={(e) => setQ(e.target.value)} className="sm:max-w-xs" />
       </div>
 
       {filtered.length === 0 ? (
@@ -183,7 +189,7 @@ function Dashboard() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <AnimatePresence mode="popLayout">
             {filtered.map((p) => (
-              <PollCard key={p._id} poll={p as any} onDelete={handleDelete} />
+              <PollCard key={p.id} poll={p} onDelete={handleDelete} />
             ))}
           </AnimatePresence>
         </div>

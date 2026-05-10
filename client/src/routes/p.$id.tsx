@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
-import { useMemo, useState } from "react";
-import { useStore } from "@/lib/mock-store";
+import { useEffect, useMemo, useState } from "react";
+import { useStore } from "@/lib/api-store";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,12 +16,28 @@ export const Route = createFileRoute("/p/$id")({
 
 function PublicPoll() {
   const { id } = Route.useParams();
-  const { polls, vote } = useStore();
+  const { polls, getPoll, vote } = useStore();
   const poll = polls.find((p) => p.id === id);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(!poll);
+
+  useEffect(() => {
+    setLoading(true);
+    getPoll(id)
+      .catch(() => undefined)
+      .finally(() => setLoading(false));
+  }, [getPoll, id]);
 
   const expired = useMemo(() => poll?.expiresAt && new Date(poll.expiresAt) < new Date(), [poll]);
+
+  if (!poll && loading) {
+    return (
+      <Centered>
+        <h2 className="text-2xl font-bold">Loading poll...</h2>
+      </Centered>
+    );
+  }
 
   if (!poll) {
     return (
@@ -66,12 +82,16 @@ function PublicPoll() {
     );
   }
 
-  const submit = () => {
+  const submit = async () => {
     for (const q of poll.questions) {
       if (q.required && !answers[q.id]) return toast.error(`Please answer: "${q.text}"`);
     }
-    vote(poll.id, answers);
-    setSubmitted(true);
+    try {
+      await vote(poll.id, answers);
+      setSubmitted(true);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to submit response");
+    }
   };
 
   return (

@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { useStore } from "@/lib/mock-store";
+import { useStore } from "@/lib/api-store";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -40,16 +40,15 @@ const COLORS = ["var(--color-chart-1)", "var(--color-chart-2)", "var(--color-cha
 
 function Analytics() {
   const { id } = Route.useParams();
-  const { polls, updatePoll, deletePoll } = useStore();
+  const { polls, getPoll, publishPoll, deletePoll } = useStore();
   const poll = polls.find((p) => p.id === id);
   const navigate = useNavigate();
   const [liveResp, setLiveResp] = useState(poll?.responses ?? 0);
 
   useEffect(() => { if (poll) setLiveResp(poll.responses); }, [poll?.responses]);
   useEffect(() => {
-    const id = setInterval(() => setLiveResp((c) => c + Math.floor(Math.random() * 2)), 2500);
-    return () => clearInterval(id);
-  }, []);
+    getPoll(id).catch((error) => toast.error(error instanceof Error ? error.message : "Unable to load poll"));
+  }, [getPoll, id]);
 
   if (!poll) {
     return (
@@ -67,9 +66,13 @@ function Analytics() {
     navigator.clipboard.writeText(`${window.location.origin}/p/${poll.id}`);
     toast.success("Public link copied");
   };
-  const publish = () => {
-    updatePoll(poll.id, { status: "published", resultsPublic: true });
-    toast.success("Results published");
+  const publish = async () => {
+    try {
+      await publishPoll(poll.id);
+      toast.success("Results published");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to publish results");
+    }
   };
 
   return (
@@ -119,7 +122,7 @@ function Analytics() {
                   <DialogDescription>This action can't be undone. All responses will be lost.</DialogDescription>
                 </DialogHeader>
                 <DialogFooter>
-                  <Button variant="destructive" onClick={() => { deletePoll(poll.id); navigate({ to: "/dashboard" }); }}>Delete poll</Button>
+                  <Button variant="destructive" onClick={async () => { await deletePoll(poll.id); navigate({ to: "/dashboard" }); }}>Delete poll</Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
@@ -128,7 +131,7 @@ function Analytics() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatsCard label="Total responses" value={liveResp.toLocaleString()} icon={Users} accent="primary" trend="● Live" />
+        <StatsCard label="Total responses" value={liveResp.toLocaleString()} icon={Users} accent="primary" trend="Backend" />
         <StatsCard label="Participation" value={`${Math.min(99, Math.round((liveResp / 2000) * 100))}%`} icon={Zap} accent="success" delay={0.05} />
         <StatsCard label="Top option" value={top?.text || "—"} icon={Trophy} accent="warning" delay={0.1} />
         <StatsCard label="Questions" value={poll.questions.length} icon={BarChart3} delay={0.15} />

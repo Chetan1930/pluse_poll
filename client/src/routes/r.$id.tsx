@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { useStore } from "@/lib/mock-store";
+import { useStore } from "@/lib/api-store";
+import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,8 +26,26 @@ const COLORS = ["var(--color-chart-1)", "var(--color-chart-2)", "var(--color-cha
 
 function Results() {
   const { id } = Route.useParams();
-  const { polls } = useStore();
+  const { polls, getPoll } = useStore();
   const poll = polls.find((p) => p.id === id);
+  const [loading, setLoading] = useState(!poll);
+
+  useEffect(() => {
+    setLoading(true);
+    getPoll(id)
+      .catch(() => undefined)
+      .finally(() => setLoading(false));
+  }, [getPoll, id]);
+
+  if (!poll && loading) {
+    return (
+      <div className="min-h-screen gradient-mesh flex items-center justify-center px-4">
+        <Card className="p-10 max-w-md text-center shadow-elegant border-border/60">
+          <h2 className="text-2xl font-bold">Loading results...</h2>
+        </Card>
+      </div>
+    );
+  }
 
   if (!poll || !poll.resultsPublic) {
     return (

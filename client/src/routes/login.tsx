@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { BarChart3, Eye, EyeOff, Github, Mail } from "lucide-react";
+import { BarChart3, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,7 +11,7 @@ import { apiRequest } from "@/lib/api";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/login")({
-  head: () => ({ meta: [{ title: "Sign in — PulsePoll" }, { name: "description", content: "Sign in to PulsePoll" }] }),
+  head: () => ({ meta: [{ title: "Sign in - PulsePoll" }, { name: "description", content: "Sign in to PulsePoll" }] }),
   component: Login,
 });
 
@@ -25,6 +25,9 @@ function Login() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!/^\S+@\S+\.\S+$/.test(email)) return toast.error("Enter a valid email");
+    if (pw.length < 6) return toast.error("Password must be at least 6 characters");
+
     setLoading(true);
     try {
       const data = await apiRequest<{ user: any }>("/auth/login", {
@@ -34,8 +37,8 @@ function Login() {
       setUser(data.user);
       toast.success("Welcome back!");
       navigate({ to: "/dashboard" });
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Unable to sign in");
     } finally {
       setLoading(false);
     }
@@ -53,9 +56,9 @@ function Login() {
         </Link>
         <div className="relative">
           <h2 className="text-4xl font-bold leading-tight">"PulsePoll completely changed how our team gathers feedback. It feels effortless."</h2>
-          <p className="mt-6 text-primary-foreground/80">— Maya Chen, Head of Product at Northwind</p>
+          <p className="mt-6 text-primary-foreground/80">- Maya Chen, Head of Product at Northwind</p>
         </div>
-        <div className="relative text-sm text-primary-foreground/70">© 2026 PulsePoll</div>
+        <div className="relative text-sm text-primary-foreground/70">(c) 2026 PulsePoll</div>
       </div>
 
       <div className="flex items-center justify-center p-6 sm:p-12">
@@ -86,7 +89,7 @@ function Login() {
                   <a href="#" className="text-xs text-primary hover:underline">Forgot?</a>
                 </div>
                 <div className="relative mt-1.5">
-                  <Input id="pw" type={show ? "text" : "password"} placeholder="••••••••" value={pw} onChange={(e) => setPw(e.target.value)} required />
+                  <Input id="pw" type={show ? "text" : "password"} placeholder="********" value={pw} onChange={(e) => setPw(e.target.value)} required />
                   <button type="button" onClick={() => setShow(!show)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                     {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>

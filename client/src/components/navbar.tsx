@@ -1,11 +1,11 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Moon, Sun, BarChart3 } from "lucide-react";
-import { useStore } from "@/lib/mock-store";
+import { useAuth } from "@/lib/auth-store";
 import { Button } from "@/components/ui/button";
 import { UserMenu } from "./user-menu";
 
 export function Navbar({ variant = "marketing" }: { variant?: "marketing" | "app" }) {
-  const { user, isHydrated, theme, toggleTheme } = useStore();
+  const { user, isHydrated, theme, toggleTheme } = useAuth();
   const path = useRouterState({ select: (s) => s.location.pathname });
 
   return (
@@ -22,7 +22,7 @@ export function Navbar({ variant = "marketing" }: { variant?: "marketing" | "app
           <nav className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
             <a href="/#features" className="hover:text-foreground transition">Features</a>
             <a href="/#preview" className="hover:text-foreground transition">Live Preview</a>
-            <Link to="/p/demo-1" className="hover:text-foreground transition">Demo</Link>
+            <Link to="/signup" className="hover:text-foreground transition">Create poll</Link>
           </nav>
         )}
 
