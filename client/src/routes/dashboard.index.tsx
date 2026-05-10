@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
-import { useStore } from "@/lib/mock-store";
+import { useStore } from "@/lib/api-store";
 import { StatsCard } from "@/components/stats-card";
 import { PollCard } from "@/components/poll-card";
 import { Button } from "@/components/ui/button";
@@ -25,17 +25,13 @@ export const Route = createFileRoute("/dashboard/")({
 });
 
 function Dashboard() {
-  const { polls, deletePoll } = useStore();
+  const { polls, loadingPolls, deletePoll } = useStore();
   const [filter, setFilter] = useState<"all" | "active" | "expired" | "published">("all");
   const [q, setQ] = useState("");
   const [liveTotal, setLiveTotal] = useState(0);
 
   const totalResponses = useMemo(() => polls.reduce((s, p) => s + p.responses, 0), [polls]);
   useEffect(() => setLiveTotal(totalResponses), [totalResponses]);
-  useEffect(() => {
-    const id = setInterval(() => setLiveTotal((c) => c + Math.floor(Math.random() * 3)), 2200);
-    return () => clearInterval(id);
-  }, []);
 
   const stats = {
     total: polls.length,
@@ -50,9 +46,22 @@ function Dashboard() {
     return true;
   });
 
-  const trend = Array.from({ length: 14 }, (_, i) => ({
-    day: `D${i + 1}`,
-    v: Math.round(50 + Math.sin(i / 2) * 30 + Math.random() * 40 + i * 6),
+  const trend = Array.from({ length: 14 }, (_, index) => {
+    const day = new Date();
+    day.setDate(day.getDate() - (13 - index));
+    const key = day.toISOString().slice(0, 10);
+    return {
+      day: day.toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+      v: polls
+        .filter((poll) => poll.createdAt.slice(0, 10) === key)
+        .reduce((sum, poll) => sum + poll.responses, 0),
+    };
+  });
+
+  const activity = polls.slice(0, 4).map((poll) => ({
+    t: new Date(poll.createdAt).toLocaleDateString(),
+    txt: `${poll.title} has ${poll.responses.toLocaleString()} responses`,
+    icon: poll.resultsPublic ? CheckCircle2 : poll.status === "expired" ? Clock : Users,
   }));
 
   return (
@@ -69,7 +78,7 @@ function Dashboard() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatsCard label="Total polls" value={stats.total} icon={FileText} delay={0} />
-        <StatsCard label="Total responses" value={liveTotal.toLocaleString()} icon={Users} accent="primary" trend="● Live" delay={0.05} />
+        <StatsCard label="Total responses" value={liveTotal.toLocaleString()} icon={Users} accent="primary" trend="Backend" delay={0.05} />
         <StatsCard label="Active" value={stats.active} icon={Sparkles} accent="success" delay={0.1} />
         <StatsCard label="Published" value={stats.published} icon={CheckCircle2} accent="warning" delay={0.15} />
       </div>
@@ -82,7 +91,7 @@ function Dashboard() {
               <p className="text-xs text-muted-foreground">Last 14 days</p>
             </div>
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <span className="h-2 w-2 rounded-full bg-success animate-pulse" /> Live
+              <span className="h-2 w-2 rounded-full bg-success" /> Backend
             </div>
           </div>
           <div className="h-64">
@@ -108,12 +117,7 @@ function Dashboard() {
           <h3 className="font-semibold">Recent activity</h3>
           <p className="text-xs text-muted-foreground">Latest pulse from your polls</p>
           <ul className="mt-4 space-y-3">
-            {[
-              { t: "2m ago", txt: "12 new responses on Framework poll", icon: Users },
-              { t: "1h ago", txt: "Sprint retro poll expired", icon: Clock },
-              { t: "3h ago", txt: "Results published for Roadmap vote", icon: CheckCircle2 },
-              { t: "Yesterday", txt: "New poll created: Onboarding survey", icon: BarChart3 },
-            ].map((a, i) => (
+            {(activity.length ? activity : [{ t: "Now", txt: "Create your first poll to see activity here", icon: BarChart3 }]).map((a, i) => (
               <motion.li
                 key={i}
                 initial={{ opacity: 0, x: 8 }}
@@ -146,7 +150,11 @@ function Dashboard() {
         <Input placeholder="Filter by title…" value={q} onChange={(e) => setQ(e.target.value)} className="sm:max-w-xs" />
       </div>
 
-      {filtered.length === 0 ? (
+      {loadingPolls ? (
+        <Card className="p-12 text-center border-dashed border-border/60">
+          <h3 className="font-semibold">Loading polls...</h3>
+        </Card>
+      ) : filtered.length === 0 ? (
         <Card className="p-12 text-center border-dashed border-border/60">
           <div className="mx-auto h-12 w-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
             <FileText className="h-6 w-6" />

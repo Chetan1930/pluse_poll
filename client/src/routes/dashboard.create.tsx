@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
-import { useStore, type Poll, type Question } from "@/lib/mock-store";
+import { useStore, type Question } from "@/lib/api-store";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -69,24 +69,22 @@ function CreatePoll() {
     return null;
   };
 
-  const submit = () => {
+  const submit = async () => {
     const err = validate();
     if (err) return toast.error(err);
-    const poll: Poll = {
-      id: uid(),
-      title: title.trim(),
-      description: desc.trim(),
-      questions,
-      createdAt: new Date().toISOString(),
-      expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
-      anonymous,
-      status: "active",
-      responses: 0,
-      resultsPublic: false,
-    };
-    addPoll(poll);
-    toast.success("Poll created!");
-    navigate({ to: "/dashboard/polls/$id", params: { id: poll.id } });
+    try {
+      const poll = await addPoll({
+        title: title.trim(),
+        description: desc.trim(),
+        questions,
+        expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
+        anonymous,
+      });
+      toast.success("Poll created!");
+      navigate({ to: "/dashboard/polls/$id", params: { id: poll.id } });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to create poll");
+    }
   };
 
   return (

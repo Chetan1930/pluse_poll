@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { useStore } from "@/lib/mock-store";
+import { useStore } from "@/lib/api-store";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/login")({
@@ -22,16 +22,20 @@ function Login() {
   const [pw, setPw] = useState("");
   const [errs, setErrs] = useState<{ email?: string; pw?: string }>({});
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const e2: typeof errs = {};
     if (!/^\S+@\S+\.\S+$/.test(email)) e2.email = "Enter a valid email";
     if (pw.length < 6) e2.pw = "Min 6 characters";
     setErrs(e2);
     if (Object.keys(e2).length) return;
-    login(email);
-    toast.success("Welcome back!");
-    navigate({ to: "/dashboard" });
+    try {
+      await login(email, pw);
+      toast.success("Welcome back!");
+      navigate({ to: "/dashboard" });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to sign in");
+    }
   };
 
   return (

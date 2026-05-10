@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { BarChart3, LayoutDashboard, PlusCircle, Settings, LogOut, Bell, Search } from "lucide-react";
-import { useStore } from "@/lib/mock-store";
+import { useStore } from "@/lib/api-store";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -24,15 +24,15 @@ const nav = [
 ];
 
 function DashLayout() {
-  const { user, logout, theme, toggleTheme } = useStore();
+  const { user, authReady, logout, theme, toggleTheme } = useStore();
   const navigate = useNavigate();
   const path = useRouterState({ select: (s) => s.location.pathname });
 
   useEffect(() => {
-    if (user === null && typeof window !== "undefined" && !localStorage.getItem("pp_user")) {
+    if (authReady && user === null) {
       navigate({ to: "/login" });
     }
-  }, [user, navigate]);
+  }, [authReady, user, navigate]);
 
   return (
     <div className="min-h-screen flex bg-background">

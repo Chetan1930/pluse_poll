@@ -8,7 +8,7 @@ import {
 } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
-import { StoreProvider } from "@/lib/mock-store";
+import { StoreProvider } from "@/lib/api-store";
 import { Toaster } from "sonner";
 
 function NotFoundComponent() {

@@ -9,13 +9,11 @@ import {
   Users,
   Globe,
   CheckCircle2,
-  TrendingUp,
 } from "lucide-react";
 import { Navbar } from "@/components/navbar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useEffect, useState } from "react";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -39,13 +37,13 @@ export const Route = createFileRoute("/")({
 
 const trendData = Array.from({ length: 24 }, (_, i) => ({
   t: `${i}h`,
-  v: Math.round(40 + Math.sin(i / 2) * 20 + Math.random() * 30 + i * 3),
+  v: [12, 16, 18, 22, 29, 34, 42, 55, 63, 71, 79, 88, 96, 108, 122, 137, 149, 166, 184, 201, 224, 243, 268, 291][i],
 }));
 const optionData = [
-  { name: "React", v: 612 },
-  { name: "Svelte", v: 244 },
-  { name: "Vue", v: 218 },
-  { name: "Solid", v: 174 },
+  { name: "Option A", v: 42 },
+  { name: "Option B", v: 31 },
+  { name: "Option C", v: 18 },
+  { name: "Option D", v: 9 },
 ];
 
 function Landing() {
@@ -105,7 +103,7 @@ function Hero() {
             <Link to="/signup">Create a poll <ArrowRight className="h-4 w-4 ml-1" /></Link>
           </Button>
           <Button size="lg" variant="outline" asChild className="h-12 px-6 text-base">
-            <Link to="/p/demo-1">View live demo</Link>
+            <Link to="/signup">Try the builder</Link>
           </Button>
         </motion.div>
         <p className="mt-6 text-xs text-muted-foreground">
@@ -117,11 +115,7 @@ function Hero() {
 }
 
 function LivePreview() {
-  const [count, setCount] = useState(1248);
-  useEffect(() => {
-    const id = setInterval(() => setCount((c) => c + Math.floor(Math.random() * 4)), 1500);
-    return () => clearInterval(id);
-  }, []);
+  const count = optionData.reduce((sum, option) => sum + option.v, 0);
 
   return (
     <section id="preview" className="mx-auto max-w-7xl px-4 sm:px-6 pb-24">
@@ -135,14 +129,11 @@ function LivePreview() {
           <Card className="p-6 shadow-soft border-border/60 h-full">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-muted-foreground">Live responses</p>
+                <p className="text-xs text-muted-foreground">Response summary</p>
                 <p className="text-3xl font-bold tabular-nums mt-1">{count.toLocaleString()}</p>
               </div>
-              <div className="flex h-2 w-2 rounded-full bg-success animate-pulse" />
+              <div className="flex h-2 w-2 rounded-full bg-success" />
             </div>
-            <p className="mt-1 text-xs text-success font-medium flex items-center gap-1">
-              <TrendingUp className="h-3 w-3" /> +12% this hour
-            </p>
             <div className="h-32 mt-4 -mx-2">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={trendData}>
@@ -170,9 +161,9 @@ function LivePreview() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted-foreground uppercase tracking-wider">Question results</p>
-                <p className="text-base font-semibold mt-1">Which framework do you reach for first?</p>
+                <p className="text-base font-semibold mt-1">Question-level results from your backend data</p>
               </div>
-              <Badge className="gradient-primary border-0 text-primary-foreground">Realtime</Badge>
+              <Badge className="gradient-primary border-0 text-primary-foreground">Analytics</Badge>
             </div>
             <div className="h-56 mt-4 -mx-2">
               <ResponsiveContainer width="100%" height="100%">

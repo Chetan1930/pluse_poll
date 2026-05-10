@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { Calendar, Users, MoreVertical, Share2, BarChart3, Trash2, Eye } from "lucide-react";
-import type { Poll } from "@/lib/mock-store";
+import type { Poll } from "@/lib/api-store";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
