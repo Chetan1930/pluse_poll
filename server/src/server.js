@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import http from 'http';
+import net from 'net';
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
@@ -50,12 +51,59 @@ app.use((_req, res) => {
 app.use(errorHandler);
 
 // ─── Start ────────────────────────────────────────────────────────────────────
-const PORT = process.env.PORT || 5000;
+const DEFAULT_PORT = Number(process.env.PORT) || 5000;
 
-connectDB().then(() => {
-  httpServer.listen(PORT, () => {
-    console.log(`PulsePoll server running on port ${PORT} [${process.env.NODE_ENV || 'development'}]`);
+const isPortAvailable = (port) =>
+  new Promise((resolve, reject) => {
+    const tester = net.createServer();
+
+    tester.once('error', (error) => {
+      if (error.code === 'EADDRINUSE') {
+        resolve(false);
+        return;
+      }
+
+      reject(error);
+    });
+
+    tester.once('listening', () => {
+      tester.close(() => resolve(true));
+    });
+
+    tester.listen(port);
   });
-});
+
+const findAvailablePort = async (startPort, maxAttempts = 10) => {
+  for (let offset = 0; offset < maxAttempts; offset += 1) {
+    const port = startPort + offset;
+
+    if (await isPortAvailable(port)) {
+      return port;
+    }
+  }
+
+  throw new Error(`No open port found between ${startPort} and ${startPort + maxAttempts - 1}.`);
+};
+
+const startServer = async () => {
+  try {
+    await connectDB();
+
+    const port = await findAvailablePort(DEFAULT_PORT);
+
+    if (port !== DEFAULT_PORT) {
+      console.warn(`Port ${DEFAULT_PORT} is busy. Starting PulsePoll on port ${port} instead.`);
+    }
+
+    httpServer.listen(port, () => {
+      console.log(`PulsePoll server running on port ${port} [${process.env.NODE_ENV || 'development'}]`);
+    });
+  } catch (error) {
+    console.error(`Server startup error: ${error.message}`);
+    process.exit(1);
+  }
+};
+
+startServer();
 
 export default app;
