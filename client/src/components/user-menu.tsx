@@ -1,6 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
-import { LogOut, User as UserIcon, LayoutDashboard, Settings } from "lucide-react";
-import { useStore } from "@/lib/mock-store";
+import { LogOut, LayoutDashboard, Settings } from "lucide-react";
+import { useAuth } from "@/lib/auth-store";
+import { apiRequest } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -10,12 +11,25 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { toast } from "sonner";
 
 export function UserMenu() {
-  const { user, logout } = useStore();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   if (!user) return null;
+
+  const handleLogout = async () => {
+    try {
+      await apiRequest("/auth/logout", { method: "POST" });
+      logout();
+      navigate({ to: "/" });
+      toast.success("Logged out successfully");
+    } catch (err) {
+      logout(); // Fallback
+      navigate({ to: "/" });
+    }
+  };
 
   return (
     <DropdownMenu>
@@ -43,7 +57,7 @@ export function UserMenu() {
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem 
-          onClick={() => { logout(); navigate({ to: "/" }); }} 
+          onClick={handleLogout} 
           className="text-destructive focus:text-destructive cursor-pointer"
         >
           <LogOut className="h-4 w-4 mr-2" /> Sign out

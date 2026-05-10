@@ -8,7 +8,7 @@ import {
 } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
-import { StoreProvider } from "@/lib/mock-store";
+import { AuthProvider } from "@/lib/auth-store";
 import { Toaster } from "sonner";
 
 function NotFoundComponent() {
@@ -65,10 +65,10 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (
     <QueryClientProvider client={queryClient}>
-      <StoreProvider>
+      <AuthProvider>
         <Outlet />
         <Toaster position="top-right" richColors closeButton />
-      </StoreProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
