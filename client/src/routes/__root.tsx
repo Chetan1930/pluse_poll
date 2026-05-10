@@ -9,6 +9,7 @@ import {
 
 import appCss from "../styles.css?url";
 import { StoreProvider } from "@/lib/api-store";
+import { AuthProvider } from "@/lib/auth-store";
 import { Toaster } from "sonner";
 
 function NotFoundComponent() {
@@ -65,10 +66,12 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (
     <QueryClientProvider client={queryClient}>
-      <StoreProvider>
-        <Outlet />
-        <Toaster position="top-right" richColors closeButton />
-      </StoreProvider>
+      <AuthProvider>
+        <StoreProvider>
+          <Outlet />
+          <Toaster position="top-right" richColors closeButton />
+        </StoreProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

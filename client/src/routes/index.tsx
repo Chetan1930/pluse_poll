@@ -9,50 +9,31 @@ import {
   Users,
   Globe,
   CheckCircle2,
+  Layout,
+  MousePointer2,
 } from "lucide-react";
 import { Navbar } from "@/components/navbar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  XAxis,
-  Tooltip,
-  BarChart,
-  Bar,
-  CartesianGrid,
-} from "recharts";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "PulsePoll — Real-time polls & feedback that feel premium" },
-      { name: "description", content: "Build beautiful polls in seconds. Get real-time responses, gorgeous analytics, and shareable results." },
+      { title: "PulsePoll - Professional Feedback & Real-time Insights" },
+      { name: "description", content: "The modern standard for gathering feedback. Create beautiful polls, analyze results in real-time, and make data-driven decisions." },
     ],
   }),
   component: Landing,
 });
 
-const trendData = Array.from({ length: 24 }, (_, i) => ({
-  t: `${i}h`,
-  v: [12, 16, 18, 22, 29, 34, 42, 55, 63, 71, 79, 88, 96, 108, 122, 137, 149, 166, 184, 201, 224, 243, 268, 291][i],
-}));
-const optionData = [
-  { name: "Option A", v: 42 },
-  { name: "Option B", v: 31 },
-  { name: "Option C", v: 18 },
-  { name: "Option D", v: 9 },
-];
-
 function Landing() {
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
+    <div className="min-h-screen flex flex-col bg-background selection:bg-primary/10 selection:text-primary">
+      <Navbar variant="marketing" />
       <main className="flex-1">
         <Hero />
-        <LivePreview />
+        <ValueProp />
         <Features />
         <CTA />
       </main>
@@ -63,127 +44,87 @@ function Landing() {
 
 function Hero() {
   return (
-    <section className="relative overflow-hidden">
-      <div className="absolute inset-0 gradient-mesh opacity-70 pointer-events-none" />
-      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 pt-20 pb-24 md:pt-28 md:pb-32 text-center">
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <Badge variant="outline" className="gap-1.5 border-primary/30 bg-primary/5 text-primary">
-            <Sparkles className="h-3 w-3" /> New: Realtime analytics 2.0
-          </Badge>
-        </motion.div>
-        <motion.h1
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.05 }}
-          className="mt-6 text-5xl md:text-7xl font-bold tracking-tight leading-[1.05]"
-        >
-          Polls that <span className="gradient-text">people actually</span>
-          <br /> want to answer.
-        </motion.h1>
-        <motion.p
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.15 }}
-          className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground"
-        >
-          Build beautiful polls in seconds. Watch responses stream in live. Share gorgeous results
-          with a single link. PulsePoll is the modern way to gather feedback.
-        </motion.p>
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.25 }}
-          className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3"
-        >
-          <Button size="lg" asChild className="gradient-primary shadow-elegant border-0 h-12 px-6 text-base">
-            <Link to="/signup">Create a poll <ArrowRight className="h-4 w-4 ml-1" /></Link>
-          </Button>
-          <Button size="lg" variant="outline" asChild className="h-12 px-6 text-base">
-            <Link to="/signup">Try the builder</Link>
-          </Button>
-        </motion.div>
-        <p className="mt-6 text-xs text-muted-foreground">
-          No credit card required · Free forever for hobby projects
-        </p>
+    <section className="relative pt-20 pb-16 md:pt-32 md:pb-24 overflow-hidden">
+      <div className="absolute inset-0 gradient-mesh opacity-40 pointer-events-none" />
+      <div className="container mx-auto px-4 relative z-10">
+        <div className="max-w-4xl mx-auto text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <Badge variant="outline" className="mb-6 py-1 px-4 rounded-full border-primary/20 bg-primary/5 text-primary font-medium">
+              <Sparkles className="h-3.5 w-3.5 mr-2 inline" />
+              Trusted by 500+ forward-thinking teams
+            </Badge>
+          </motion.div>
+
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="text-5xl md:text-7xl font-bold tracking-tight text-foreground mb-8 leading-[1.1]"
+          >
+            Gather feedback that <span className="text-primary">actually matters.</span>
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto leading-relaxed"
+          >
+            PulsePoll is the professional standard for real-time polling. Create beautiful,
+            high-conversion surveys and watch insights stream in instantly.
+          </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="flex flex-col sm:flex-row items-center justify-center gap-4"
+          >
+            <Button size="lg" asChild className="h-14 px-8 text-lg rounded-2xl gradient-primary border-0 shadow-elegant hover:scale-[1.02] transition-transform">
+              <Link to="/signup">Get started for free <ArrowRight className="ml-2 h-5 w-5" /></Link>
+            </Button>
+            <Button size="lg" variant="outline" asChild className="h-14 px-8 text-lg rounded-2xl border-border/60 hover:bg-accent/50">
+              <Link to="/login">Sign in to dashboard</Link>
+            </Button>
+          </motion.div>
+        </div>
       </div>
     </section>
   );
 }
 
-function LivePreview() {
-  const count = optionData.reduce((sum, option) => sum + option.v, 0);
+function ValueProp() {
+  const props = [
+    { icon: MousePointer2, title: "Frictionless", desc: "Respondents can answer in one click without creating an account." },
+    { icon: Layout, title: "Modern UI", desc: "A clean, distraction-free interface designed for maximum engagement." },
+    { icon: Globe, title: "Global Scale", desc: "Distributed infrastructure ensures your polls are fast, anywhere in the world." },
+  ];
 
   return (
-    <section id="preview" className="mx-auto max-w-7xl px-4 sm:px-6 pb-24">
-      <div className="grid gap-4 md:grid-cols-3">
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-        >
-          <Card className="p-6 shadow-soft border-border/60 h-full">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-muted-foreground">Response summary</p>
-                <p className="text-3xl font-bold tabular-nums mt-1">{count.toLocaleString()}</p>
+    <section className="py-20 border-y border-border/40 bg-muted/30">
+      <div className="container mx-auto px-4">
+        <div className="grid md:grid-cols-3 gap-12">
+          {props.map((p, i) => (
+            <motion.div
+              key={p.title}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.1 }}
+              className="flex flex-col items-center text-center"
+            >
+              <div className="h-12 w-12 rounded-2xl bg-background shadow-soft flex items-center justify-center mb-6 text-primary">
+                <p.icon className="h-6 w-6" />
               </div>
-              <div className="flex h-2 w-2 rounded-full bg-success" />
-            </div>
-            <div className="h-32 mt-4 -mx-2">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={trendData}>
-                  <defs>
-                    <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="var(--color-primary)" stopOpacity={0.4} />
-                      <stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <Area type="monotone" dataKey="v" stroke="var(--color-primary)" strokeWidth={2} fill="url(#g1)" />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </Card>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="md:col-span-2"
-        >
-          <Card className="p-6 shadow-soft border-border/60 h-full">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wider">Question results</p>
-                <p className="text-base font-semibold mt-1">Question-level results from your backend data</p>
-              </div>
-              <Badge className="gradient-primary border-0 text-primary-foreground">Analytics</Badge>
-            </div>
-            <div className="h-56 mt-4 -mx-2">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={optionData} barSize={36}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
-                  <XAxis dataKey="name" stroke="var(--color-muted-foreground)" fontSize={12} tickLine={false} axisLine={false} />
-                  <Tooltip
-                    contentStyle={{
-                      background: "var(--color-popover)",
-                      border: "1px solid var(--color-border)",
-                      borderRadius: 12,
-                      fontSize: 12,
-                    }}
-                  />
-                  <Bar dataKey="v" fill="var(--color-primary)" radius={[8, 8, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </Card>
-        </motion.div>
+              <h3 className="text-xl font-semibold mb-3">{p.title}</h3>
+              <p className="text-muted-foreground leading-relaxed">{p.desc}</p>
+            </motion.div>
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -191,40 +132,67 @@ function LivePreview() {
 
 function Features() {
   const features = [
-    { icon: Zap, title: "Lightning builder", desc: "Drag, type, ship. Build your poll in under a minute with our delightful editor." },
-    { icon: BarChart3, title: "Beautiful analytics", desc: "Question-level breakdowns, trends, and exports — all out of the box." },
-    { icon: Globe, title: "Realtime everywhere", desc: "Responses stream in live. Watch your dashboard update with smooth animations." },
-    { icon: Shield, title: "Anonymous or signed-in", desc: "Choose how respondents authenticate per poll. Privacy-first by default." },
-    { icon: Users, title: "Share anywhere", desc: "Beautiful public pages, embeds, and one-click published results." },
-    { icon: CheckCircle2, title: "Validation built-in", desc: "Required questions, expiry handling, and clean states for every edge case." },
+    {
+      icon: Zap,
+      title: "Real-time Analytics",
+      desc: "Watch your data come to life. Our live dashboard updates instantly as responses roll in.",
+    },
+    {
+      icon: Shield,
+      title: "Enterprise Security",
+      desc: "Advanced fraud detection and response validation keep your data clean and reliable.",
+    },
+    {
+      icon: BarChart3,
+      title: "Visual Insights",
+      desc: "Beautifully rendered charts and exports make it easy to present your findings to stakeholders.",
+    },
+    {
+      icon: Users,
+      title: "Team Collaboration",
+      desc: "Share access with your team and manage multiple polls from a centralized workspace.",
+    },
+    {
+      icon: CheckCircle2,
+      title: "Smart Validation",
+      desc: "Ensure high-quality data with required questions and intelligent response filtering.",
+    },
+    {
+      icon: Sparkles,
+      title: "Custom Branding",
+      desc: "Make every poll your own with customizable themes and professional styling options.",
+    },
   ];
+
   return (
-    <section id="features" className="mx-auto max-w-7xl px-4 sm:px-6 pb-24">
-      <div className="text-center mb-12">
-        <Badge variant="outline" className="border-primary/30 text-primary bg-primary/5">Features</Badge>
-        <h2 className="mt-4 text-4xl md:text-5xl font-bold tracking-tight">Everything you need, nothing you don't</h2>
-        <p className="mt-3 text-muted-foreground max-w-2xl mx-auto">
-          A polling platform built on three principles: fast, beautiful, and respectful of your audience's time.
-        </p>
-      </div>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {features.map((f, i) => (
-          <motion.div
-            key={f.title}
-            initial={{ opacity: 0, y: 12 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-50px" }}
-            transition={{ duration: 0.4, delay: i * 0.05 }}
-          >
-            <Card className="p-6 h-full border-border/60 hover:shadow-elegant hover:border-primary/30 transition-all group">
-              <div className="h-11 w-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
-                <f.icon className="h-5 w-5" />
-              </div>
-              <h3 className="mt-4 font-semibold">{f.title}</h3>
-              <p className="mt-1.5 text-sm text-muted-foreground">{f.desc}</p>
-            </Card>
-          </motion.div>
-        ))}
+    <section id="features" className="py-24">
+      <div className="container mx-auto px-4">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">Built for modern teams</h2>
+          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+            Everything you need to gather, analyze, and act on feedback in one powerful platform.
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {features.map((f, i) => (
+            <motion.div
+              key={f.title}
+              initial={{ opacity: 0, scale: 0.95 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.05 }}
+            >
+              <Card className="p-8 h-full border-border/60 hover:border-primary/30 hover:shadow-elegant transition-all group rounded-3xl bg-card/50 backdrop-blur-sm">
+                <div className="h-12 w-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <f.icon className="h-6 w-6" />
+                </div>
+                <h3 className="text-xl font-semibold mb-3">{f.title}</h3>
+                <p className="text-muted-foreground leading-relaxed">{f.desc}</p>
+              </Card>
+            </motion.div>
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -232,19 +200,22 @@ function Features() {
 
 function CTA() {
   return (
-    <section className="mx-auto max-w-7xl px-4 sm:px-6 pb-24">
-      <div className="relative overflow-hidden rounded-3xl gradient-primary shadow-elegant p-10 md:p-16 text-center">
-        <div className="absolute inset-0 opacity-30 gradient-mesh" />
-        <div className="relative">
-          <h2 className="text-3xl md:text-5xl font-bold text-primary-foreground tracking-tight">
-            Start collecting feedback today
+    <section className="py-24 container mx-auto px-4">
+      <div className="relative overflow-hidden rounded-[2.5rem] gradient-primary p-12 md:p-20 text-center shadow-elegant">
+        <div className="absolute inset-0 opacity-20 gradient-mesh" />
+        <div className="relative z-10 max-w-3xl mx-auto">
+          <h2 className="text-4xl md:text-6xl font-bold text-primary-foreground mb-6 tracking-tight">
+            Ready to elevate your feedback?
           </h2>
-          <p className="mt-4 text-primary-foreground/80 max-w-xl mx-auto">
-            Join thousands of teams using PulsePoll to make better decisions, faster.
+          <p className="text-xl text-primary-foreground/80 mb-10">
+            Join the thousands of professionals who trust PulsePoll for their most critical insights.
           </p>
-          <Button size="lg" asChild className="mt-8 bg-background text-foreground hover:bg-background/90 h-12 px-7">
-            <Link to="/signup">Create your first poll <ArrowRight className="h-4 w-4 ml-1" /></Link>
-          </Button>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Button size="lg" asChild className="h-14 px-10 text-lg rounded-2xl bg-background text-foreground hover:bg-background/90 shadow-soft">
+              <Link to="/signup">Create your first poll</Link>
+            </Button>
+            <p className="text-sm text-primary-foreground/60">No credit card required</p>
+          </div>
         </div>
       </div>
     </section>
@@ -253,18 +224,26 @@ function CTA() {
 
 function Footer() {
   return (
-    <footer className="border-t border-border/60 py-10">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
-        <div className="flex items-center gap-2">
-          <div className="h-6 w-6 rounded-lg gradient-primary" />
-          <span className="font-semibold text-foreground">PulsePoll</span>
-          <span>© 2026</span>
-        </div>
-        <div className="flex items-center gap-6">
-          <a href="#features" className="hover:text-foreground">Features</a>
-          <a href="#" className="hover:text-foreground">Privacy</a>
-          <a href="#" className="hover:text-foreground">Terms</a>
-          <a href="#" className="hover:text-foreground">Contact</a>
+    <footer className="border-t border-border/40 py-12 bg-muted/20">
+      <div className="container mx-auto px-4">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl gradient-primary flex items-center justify-center shadow-soft">
+              <BarChart3 className="h-5 w-5 text-primary-foreground" />
+            </div>
+            <span className="text-xl font-bold tracking-tight">PulsePoll</span>
+          </div>
+
+          <nav className="flex flex-wrap justify-center gap-8 text-sm font-medium text-muted-foreground">
+            <a href="#features" className="hover:text-foreground transition-colors">Features</a>
+            <a href="#" className="hover:text-foreground transition-colors">Privacy Policy</a>
+            <a href="#" className="hover:text-foreground transition-colors">Terms of Service</a>
+            <a href="#" className="hover:text-foreground transition-colors">Contact Support</a>
+          </nav>
+
+          <div className="text-sm text-muted-foreground">
+            (c) 2026 PulsePoll Inc. All rights reserved.
+          </div>
         </div>
       </div>
     </footer>

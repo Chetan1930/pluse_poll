@@ -1,12 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useStore } from "@/lib/api-store";
 import { StatsCard } from "@/components/stats-card";
 import { PollCard } from "@/components/poll-card";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -18,9 +19,10 @@ import {
 } from "recharts";
 import { BarChart3, CheckCircle2, Clock, FileText, Plus, Sparkles, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/dashboard/")({
-  head: () => ({ meta: [{ title: "Dashboard — PulsePoll" }, { name: "description", content: "Your polls and analytics" }] }),
+  head: () => ({ meta: [{ title: "Dashboard - PulsePoll" }, { name: "description", content: "Your polls and analytics" }] }),
   component: Dashboard,
 });
 
@@ -28,23 +30,31 @@ function Dashboard() {
   const { polls, loadingPolls, deletePoll } = useStore();
   const [filter, setFilter] = useState<"all" | "active" | "expired" | "published">("all");
   const [q, setQ] = useState("");
-  const [liveTotal, setLiveTotal] = useState(0);
 
-  const totalResponses = useMemo(() => polls.reduce((s, p) => s + p.responses, 0), [polls]);
-  useEffect(() => setLiveTotal(totalResponses), [totalResponses]);
-
-  const stats = {
+  const stats = useMemo(() => ({
     total: polls.length,
-    active: polls.filter((p) => p.status === "active").length,
-    expired: polls.filter((p) => p.status === "expired").length,
-    published: polls.filter((p) => p.status === "published").length,
-  };
+    responses: polls.reduce((s, p) => s + (p.responses || 0), 0),
+    active: polls.filter((p) => !p.expiresAt || new Date(p.expiresAt) > new Date()).length,
+    published: polls.filter((p) => p.resultsPublic).length,
+  }), [polls]);
 
   const filtered = polls.filter((p) => {
-    if (filter !== "all" && p.status !== filter) return false;
+    const isExpired = p.expiresAt && new Date(p.expiresAt) < new Date();
+    if (filter === "active" && isExpired) return false;
+    if (filter === "expired" && !isExpired) return false;
+    if (filter === "published" && !p.resultsPublic) return false;
     if (q && !p.title.toLowerCase().includes(q.toLowerCase())) return false;
     return true;
   });
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deletePoll(id);
+      toast.success("Poll deleted");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Unable to delete poll");
+    }
+  };
 
   const trend = Array.from({ length: 14 }, (_, index) => {
     const day = new Date();
@@ -64,12 +74,26 @@ function Dashboard() {
     icon: poll.resultsPublic ? CheckCircle2 : poll.status === "expired" ? Clock : Users,
   }));
 
+  if (loadingPolls) {
+    return (
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div className="flex justify-between items-center">
+          <Skeleton className="h-10 w-48" />
+          <Skeleton className="h-10 w-32" />
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-32 w-full" />)}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Overview</h1>
-          <p className="text-muted-foreground text-sm mt-1">Your polls and pulse — at a glance.</p>
+          <p className="text-muted-foreground text-sm mt-1">Your polls and pulse - at a glance.</p>
         </div>
         <Button asChild className="gradient-primary border-0 shadow-elegant">
           <Link to="/dashboard/create"><Plus className="h-4 w-4 mr-1" /> New poll</Link>
@@ -78,7 +102,7 @@ function Dashboard() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatsCard label="Total polls" value={stats.total} icon={FileText} delay={0} />
-        <StatsCard label="Total responses" value={liveTotal.toLocaleString()} icon={Users} accent="primary" trend="Backend" delay={0.05} />
+        <StatsCard label="Total responses" value={stats.responses.toLocaleString()} icon={Users} accent="primary" trend="Backend" delay={0.05} />
         <StatsCard label="Active" value={stats.active} icon={Sparkles} accent="success" delay={0.1} />
         <StatsCard label="Published" value={stats.published} icon={CheckCircle2} accent="warning" delay={0.15} />
       </div>
@@ -147,14 +171,10 @@ function Dashboard() {
             <TabsTrigger value="expired">Expired</TabsTrigger>
           </TabsList>
         </Tabs>
-        <Input placeholder="Filter by title…" value={q} onChange={(e) => setQ(e.target.value)} className="sm:max-w-xs" />
+        <Input placeholder="Filter by title..." value={q} onChange={(e) => setQ(e.target.value)} className="sm:max-w-xs" />
       </div>
 
-      {loadingPolls ? (
-        <Card className="p-12 text-center border-dashed border-border/60">
-          <h3 className="font-semibold">Loading polls...</h3>
-        </Card>
-      ) : filtered.length === 0 ? (
+      {filtered.length === 0 ? (
         <Card className="p-12 text-center border-dashed border-border/60">
           <div className="mx-auto h-12 w-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
             <FileText className="h-6 w-6" />
@@ -169,7 +189,7 @@ function Dashboard() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <AnimatePresence mode="popLayout">
             {filtered.map((p) => (
-              <PollCard key={p.id} poll={p} onDelete={deletePoll} />
+              <PollCard key={p.id} poll={p} onDelete={handleDelete} />
             ))}
           </AnimatePresence>
         </div>
