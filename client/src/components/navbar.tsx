@@ -1,11 +1,11 @@
-import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { Moon, Sun, BarChart3, LogOut, User as UserIcon } from "lucide-react";
-import { useStore } from "@/lib/api-store";
+import { Link, useRouterState } from "@tanstack/react-router";
+import { Moon, Sun, BarChart3 } from "lucide-react";
+import { useAuth } from "@/lib/auth-store";
 import { Button } from "@/components/ui/button";
 import { UserMenu } from "./user-menu";
 
 export function Navbar({ variant = "marketing" }: { variant?: "marketing" | "app" }) {
-  const { user, isHydrated, theme, toggleTheme } = useStore();
+  const { user, isHydrated, theme, toggleTheme } = useAuth();
   const path = useRouterState({ select: (s) => s.location.pathname });
 
   return (
