@@ -7,6 +7,7 @@ import { UserMenu } from "./user-menu";
 export function Navbar({ variant = "marketing" }: { variant?: "marketing" | "app" }) {
   const { user, isHydrated, theme, toggleTheme } = useAuth();
   const path = useRouterState({ select: (s) => s.location.pathname });
+  const loggedIn = isHydrated && !!user;
 
   return (
     <header className="sticky top-0 z-40 glass border-b border-border/60">
@@ -20,15 +21,23 @@ export function Navbar({ variant = "marketing" }: { variant?: "marketing" | "app
 
         {variant === "marketing" && (
           <nav className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
-            <a href="/#features" className="hover:text-foreground transition">
+            {/* <a href="/#features" className="hover:text-foreground transition">
               Features
-            </a>
-            <a href="/#preview" className="hover:text-foreground transition">
-              Live Preview
-            </a>
-            <Link to="/signup" className="hover:text-foreground transition">
-              Create poll
-            </Link>
+            </a> */}
+            {loggedIn ? (
+              <>
+                <Link to="/dashboard" className="hover:text-foreground transition">
+                  Dashboard
+                </Link>
+                <Link to="/dashboard/create" className="hover:text-foreground transition">
+                  Create poll
+                </Link>
+              </>
+            ) : (
+              <Link to="/signup" className="hover:text-foreground transition">
+                Create poll
+              </Link>
+            )}
           </nav>
         )}
 
@@ -45,7 +54,7 @@ export function Navbar({ variant = "marketing" }: { variant?: "marketing" | "app
 
           {isHydrated && (
             <>
-              {user ? (
+              {loggedIn ? (
                 <UserMenu />
               ) : (
                 <>
@@ -54,9 +63,11 @@ export function Navbar({ variant = "marketing" }: { variant?: "marketing" | "app
                       <Link to="/login">Sign in</Link>
                     </Button>
                   )}
-                  <Button asChild className="gradient-primary shadow-elegant border-0 rounded-xl">
-                    <Link to="/signup">Get started</Link>
-                  </Button>
+                  {!path.startsWith("/signup") && (
+                    <Button asChild className="gradient-primary shadow-elegant border-0 rounded-xl">
+                      <Link to="/signup">Get started</Link>
+                    </Button>
+                  )}
                 </>
               )}
             </>

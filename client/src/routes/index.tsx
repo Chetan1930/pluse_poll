@@ -4,18 +4,14 @@ import {
   ArrowRight,
   Sparkles,
   BarChart3,
-  Zap,
-  Shield,
-  Users,
   Globe,
-  CheckCircle2,
   Layout,
   MousePointer2,
 } from "lucide-react";
 import { Navbar } from "@/components/navbar";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/lib/auth-store";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -38,7 +34,6 @@ function Landing() {
       <main className="flex-1">
         <Hero />
         <ValueProp />
-        <Features />
         <CTA />
       </main>
       <Footer />
@@ -47,6 +42,9 @@ function Landing() {
 }
 
 function Hero() {
+  const { user, isHydrated } = useAuth();
+  const loggedIn = isHydrated && !!user;
+
   return (
     <section className="relative pt-20 pb-16 md:pt-32 md:pb-24 overflow-hidden">
       <div className="absolute inset-0 gradient-mesh opacity-40 pointer-events-none" />
@@ -91,23 +89,37 @@ function Hero() {
             transition={{ duration: 0.6, delay: 0.3 }}
             className="flex flex-col sm:flex-row items-center justify-center gap-4"
           >
-            <Button
-              size="lg"
-              asChild
-              className="h-14 px-8 text-lg rounded-2xl gradient-primary border-0 shadow-elegant hover:scale-[1.02] transition-transform"
-            >
-              <Link to="/signup">
-                Get started for free <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              asChild
-              className="h-14 px-8 text-lg rounded-2xl border-border/60 hover:bg-accent/50"
-            >
-              <Link to="/login">Sign in to dashboard</Link>
-            </Button>
+            {loggedIn ? (
+              <Button
+                size="lg"
+                asChild
+                className="h-14 px-8 text-lg rounded-2xl gradient-primary border-0 shadow-elegant hover:scale-[1.02] transition-transform"
+              >
+                <Link to="/dashboard">
+                  Go to dashboard <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
+              </Button>
+            ) : (
+              <>
+                <Button
+                  size="lg"
+                  asChild
+                  className="h-14 px-8 text-lg rounded-2xl gradient-primary border-0 shadow-elegant hover:scale-[1.02] transition-transform"
+                >
+                  <Link to="/signup">
+                    Get started for free <ArrowRight className="ml-2 h-5 w-5" />
+                  </Link>
+                </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  asChild
+                  className="h-14 px-8 text-lg rounded-2xl border-border/60 hover:bg-accent/50"
+                >
+                  <Link to="/login">Sign in to dashboard</Link>
+                </Button>
+              </>
+            )}
           </motion.div>
         </div>
       </div>
@@ -160,98 +172,45 @@ function ValueProp() {
   );
 }
 
-function Features() {
-  const features = [
-    {
-      icon: Zap,
-      title: "Real-time Analytics",
-      desc: "Watch your data come to life. Our live dashboard updates instantly as responses roll in.",
-    },
-    {
-      icon: Shield,
-      title: "Enterprise Security",
-      desc: "Advanced fraud detection and response validation keep your data clean and reliable.",
-    },
-    {
-      icon: BarChart3,
-      title: "Visual Insights",
-      desc: "Beautifully rendered charts and exports make it easy to present your findings to stakeholders.",
-    },
-    {
-      icon: Users,
-      title: "Team Collaboration",
-      desc: "Share access with your team and manage multiple polls from a centralized workspace.",
-    },
-    {
-      icon: CheckCircle2,
-      title: "Smart Validation",
-      desc: "Ensure high-quality data with required questions and intelligent response filtering.",
-    },
-    {
-      icon: Sparkles,
-      title: "Custom Branding",
-      desc: "Make every poll your own with customizable themes and professional styling options.",
-    },
-  ];
-
-  return (
-    <section id="features" className="py-24">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">
-            Built for modern teams
-          </h2>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Everything you need to gather, analyze, and act on feedback in one powerful platform.
-          </p>
-        </div>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {features.map((f, i) => (
-            <motion.div
-              key={f.title}
-              initial={{ opacity: 0, scale: 0.95 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.05 }}
-            >
-              <Card className="p-8 h-full border-border/60 hover:border-primary/30 hover:shadow-elegant transition-all group rounded-3xl bg-card/50 backdrop-blur-sm">
-                <div className="h-12 w-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                  <f.icon className="h-6 w-6" />
-                </div>
-                <h3 className="text-xl font-semibold mb-3">{f.title}</h3>
-                <p className="text-muted-foreground leading-relaxed">{f.desc}</p>
-              </Card>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
 
 function CTA() {
+  const { user, isHydrated } = useAuth();
+  const loggedIn = isHydrated && !!user;
+
   return (
     <section className="py-24 container mx-auto px-4">
       <div className="relative overflow-hidden rounded-[2.5rem] gradient-primary p-12 md:p-20 text-center shadow-elegant">
         <div className="absolute inset-0 opacity-20 gradient-mesh" />
         <div className="relative z-10 max-w-3xl mx-auto">
           <h2 className="text-4xl md:text-6xl font-bold text-primary-foreground mb-6 tracking-tight">
-            Ready to elevate your feedback?
+            {loggedIn ? "Back to your polls" : "Ready to elevate your feedback?"}
           </h2>
           <p className="text-xl text-primary-foreground/80 mb-10">
-            Join the thousands of professionals who trust PulsePoll for their most critical
-            insights.
+            {loggedIn
+              ? "Continue building, analyzing, and sharing your polls."
+              : "Join the thousands of professionals who trust PulsePoll for their most critical insights."}
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button
-              size="lg"
-              asChild
-              className="h-14 px-10 text-lg rounded-2xl bg-background text-foreground hover:bg-background/90 shadow-soft"
-            >
-              <Link to="/signup">Create your first poll</Link>
-            </Button>
-            <p className="text-sm text-primary-foreground/60">No credit card required</p>
+            {loggedIn ? (
+              <Button
+                size="lg"
+                asChild
+                className="h-14 px-10 text-lg rounded-2xl bg-background text-foreground hover:bg-background/90 shadow-soft"
+              >
+                <Link to="/dashboard">Go to dashboard</Link>
+              </Button>
+            ) : (
+              <>
+                <Button
+                  size="lg"
+                  asChild
+                  className="h-14 px-10 text-lg rounded-2xl bg-background text-foreground hover:bg-background/90 shadow-soft"
+                >
+                  <Link to="/signup">Create your first poll</Link>
+                </Button>
+                <p className="text-sm text-primary-foreground/60">No credit card required</p>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -281,14 +240,9 @@ function Footer() {
             <a href="#" className="hover:text-foreground transition-colors">
               Terms of Service
             </a>
-            <a href="#" className="hover:text-foreground transition-colors">
-              Contact Support
-            </a>
           </nav>
 
-          <div className="text-sm text-muted-foreground">
-            (c) 2026 PulsePoll Inc. All rights reserved.
-          </div>
+          <div className="text-sm text-muted-foreground">© 2026 PulsePoll. All rights reserved.</div>
         </div>
       </div>
     </footer>
