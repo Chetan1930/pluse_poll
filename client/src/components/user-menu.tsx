@@ -56,8 +56,8 @@ export function UserMenu() {
           <Settings className="h-4 w-4 mr-2" /> Settings
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem 
-          onClick={handleLogout} 
+        <DropdownMenuItem
+          onClick={handleLogout}
           className="text-destructive focus:text-destructive cursor-pointer"
         >
           <LogOut className="h-4 w-4 mr-2" /> Sign out

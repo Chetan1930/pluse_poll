@@ -20,17 +20,29 @@ export function Navbar({ variant = "marketing" }: { variant?: "marketing" | "app
 
         {variant === "marketing" && (
           <nav className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
-            <a href="/#features" className="hover:text-foreground transition">Features</a>
-            <a href="/#preview" className="hover:text-foreground transition">Live Preview</a>
-            <Link to="/signup" className="hover:text-foreground transition">Create poll</Link>
+            <a href="/#features" className="hover:text-foreground transition">
+              Features
+            </a>
+            <a href="/#preview" className="hover:text-foreground transition">
+              Live Preview
+            </a>
+            <Link to="/signup" className="hover:text-foreground transition">
+              Create poll
+            </Link>
           </nav>
         )}
 
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label="Toggle theme" className="rounded-xl">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleTheme}
+            aria-label="Toggle theme"
+            className="rounded-xl"
+          >
             {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
           </Button>
-          
+
           {isHydrated && (
             <>
               {user ? (

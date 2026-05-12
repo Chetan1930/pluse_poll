@@ -1,7 +1,12 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
-const TOKEN_KEY = "pp_token";
+const API_BASE_URL = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(
+  /\/+$/,
+  "",
+);
+const AUTH_USER_KEY = "pp_user";
+const LEGACY_TOKEN_KEY = "pp_token";
+const AUTH_CHANGED_EVENT = "pulsepoll:auth-changed";
 
 export type PollOption = { id: string; text: string; votes: number };
 export type Question = {
@@ -90,18 +95,11 @@ type ApiAnalytics = {
 
 const StoreCtx = createContext<Ctx | null>(null);
 
-const getToken = () => (typeof window === "undefined" ? null : localStorage.getItem(TOKEN_KEY));
-
 async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const token = getToken();
   const headers = new Headers(init.headers);
 
   if (init.body && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
-  }
-
-  if (token) {
-    headers.set("Authorization", `Bearer ${token}`);
   }
 
   const res = await fetch(`${API_BASE_URL}${path}`, {
@@ -124,6 +122,19 @@ const toUser = (user: ApiUser): NonNullable<User> => ({
   email: user.email,
 });
 
+const persistAuthUser = (user: User) => {
+  if (typeof window === "undefined") return;
+
+  if (user) {
+    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+  } else {
+    localStorage.removeItem(AUTH_USER_KEY);
+  }
+
+  localStorage.removeItem(LEGACY_TOKEN_KEY);
+  window.dispatchEvent(new CustomEvent(AUTH_CHANGED_EVENT, { detail: user }));
+};
+
 const buildVoteMap = (analytics?: ApiAnalytics) => {
   const votes = new Map<string, number>();
   analytics?.questionSummaries.forEach((question) => {
@@ -145,7 +156,11 @@ const mapPoll = (poll: ApiPoll, analytics?: ApiAnalytics): Poll => {
     createdAt: poll.createdAt,
     expiresAt: poll.expiresAt || null,
     anonymous: poll.allowAnonymousResponses,
-    status: expired ? "expired" : poll.resultsPublished || poll.isPublished ? "published" : "active",
+    status: expired
+      ? "expired"
+      : poll.resultsPublished || poll.isPublished
+        ? "published"
+        : "active",
     responses: analytics?.totalResponses || 0,
     resultsPublic: poll.resultsPublished,
     questions: poll.questions.map((question) => ({
@@ -182,7 +197,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const getAnalytics = useCallback(async (pollId: string) => {
     try {
-      const { analytics } = await apiRequest<{ analytics: ApiAnalytics }>(`/responses/analytics/${pollId}`);
+      const { analytics } = await apiRequest<{ analytics: ApiAnalytics }>(
+        `/responses/analytics/${pollId}`,
+      );
       return analytics;
     } catch {
       return undefined;
@@ -205,40 +222,59 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
+    const handleAuthChange = (event: Event) => {
+      const nextUser = (event as CustomEvent<User>).detail;
+      setUser(nextUser ?? null);
+
+      if (!nextUser) {
+        setPolls([]);
+      }
+    };
+
+    window.addEventListener(AUTH_CHANGED_EVENT, handleAuthChange);
+
     const savedTheme = (localStorage.getItem("pp_theme") as "light" | "dark") || "light";
     setTheme(savedTheme);
     document.documentElement.classList.toggle("dark", savedTheme === "dark");
 
     apiRequest<{ user: ApiUser }>("/auth/me")
       .then(({ user }) => {
-        setUser(toUser(user));
+        const mapped = toUser(user);
+        persistAuthUser(mapped);
+        setUser(mapped);
         return refreshPolls();
       })
       .catch(() => {
         setUser(null);
         setPolls([]);
-        localStorage.removeItem(TOKEN_KEY);
+        persistAuthUser(null);
       })
       .finally(() => setAuthReady(true));
+
+    return () => {
+      window.removeEventListener(AUTH_CHANGED_EVENT, handleAuthChange);
+    };
   }, [refreshPolls]);
 
   const login = async (email: string, password: string) => {
-    const { user, token } = await apiRequest<{ user: ApiUser; token: string }>("/auth/login", {
+    const { user } = await apiRequest<{ user: ApiUser }>("/auth/login", {
       method: "POST",
       body: JSON.stringify({ email, password }),
     });
-    localStorage.setItem(TOKEN_KEY, token);
-    setUser(toUser(user));
+    const mapped = toUser(user);
+    persistAuthUser(mapped);
+    setUser(mapped);
     await refreshPolls();
   };
 
   const register = async (name: string, email: string, password: string) => {
-    const { user, token } = await apiRequest<{ user: ApiUser; token: string }>("/auth/register", {
+    const { user } = await apiRequest<{ user: ApiUser }>("/auth/register", {
       method: "POST",
       body: JSON.stringify({ name, email, password }),
     });
-    localStorage.setItem(TOKEN_KEY, token);
-    setUser(toUser(user));
+    const mapped = toUser(user);
+    persistAuthUser(mapped);
+    setUser(mapped);
     await refreshPolls();
   };
 
@@ -246,7 +282,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     try {
       await apiRequest("/auth/logout", { method: "POST" });
     } finally {
-      localStorage.removeItem(TOKEN_KEY);
+      persistAuthUser(null);
       setUser(null);
       setPolls([]);
     }
@@ -273,7 +309,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   };
 
   const publishPoll = async (id: string) => {
-    const { poll } = await apiRequest<{ poll: ApiPoll }>(`/polls/${id}/publish`, { method: "PATCH" });
+    const { poll } = await apiRequest<{ poll: ApiPoll }>(`/polls/${id}/publish`, {
+      method: "PATCH",
+    });
     const mapped = mapPoll(poll, await getAnalytics(id));
     setPolls((current) => current.map((item) => (item.id === id ? mapped : item)));
     return mapped;
@@ -284,31 +322,39 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setPolls((current) => current.filter((poll) => poll.id !== id));
   };
 
-  const getPoll = useCallback(async (id: string) => {
-    const [{ poll }, analytics] = await Promise.all([
-      apiRequest<{ poll: ApiPoll; isOwner: boolean }>(`/polls/${id}`),
-      getAnalytics(id),
-    ]);
-    const mapped = mapPoll(poll, analytics);
-    setPolls((current) => {
-      const exists = current.some((item) => item.id === id);
-      return exists ? current.map((item) => (item.id === id ? mapped : item)) : [mapped, ...current];
-    });
-    return mapped;
-  }, [getAnalytics]);
+  const getPoll = useCallback(
+    async (id: string) => {
+      const [{ poll }, analytics] = await Promise.all([
+        apiRequest<{ poll: ApiPoll; isOwner: boolean }>(`/polls/${id}`),
+        getAnalytics(id),
+      ]);
+      const mapped = mapPoll(poll, analytics);
+      setPolls((current) => {
+        const exists = current.some((item) => item.id === id);
+        return exists
+          ? current.map((item) => (item.id === id ? mapped : item))
+          : [mapped, ...current];
+      });
+      return mapped;
+    },
+    [getAnalytics],
+  );
 
-  const vote = useCallback(async (pollId: string, answers: Record<string, string>) => {
-    await apiRequest(`/responses/${pollId}`, {
-      method: "POST",
-      body: JSON.stringify({
-        answers: Object.entries(answers).map(([questionId, selectedOption]) => ({
-          questionId,
-          selectedOption,
-        })),
-      }),
-    });
-    await getPoll(pollId);
-  }, [getPoll]);
+  const vote = useCallback(
+    async (pollId: string, answers: Record<string, string>) => {
+      await apiRequest(`/responses/${pollId}`, {
+        method: "POST",
+        body: JSON.stringify({
+          answers: Object.entries(answers).map(([questionId, selectedOption]) => ({
+            questionId,
+            selectedOption,
+          })),
+        }),
+      });
+      await getPoll(pollId);
+    },
+    [getPoll],
+  );
 
   const toggleTheme = () => {
     const next = theme === "light" ? "dark" : "light";

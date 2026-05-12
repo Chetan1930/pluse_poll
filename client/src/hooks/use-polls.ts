@@ -21,17 +21,22 @@ export type Poll = {
   resultsPublished: boolean;
 };
 
+type PollPayload = Pick<
+  Poll,
+  "title" | "description" | "questions" | "expiresAt" | "allowAnonymousResponses"
+>;
+
 export function useMyPolls() {
   return useQuery({
     queryKey: ["polls", "my"],
-    queryFn: () => apiRequest<{ polls: Poll[] }>("/polls/my").then(d => d.polls),
+    queryFn: () => apiRequest<{ polls: Poll[] }>("/polls/my").then((d) => d.polls),
   });
 }
 
 export function usePoll(id: string) {
   return useQuery({
     queryKey: ["polls", id],
-    queryFn: () => apiRequest<{ poll: Poll }>欲(`/polls/${id}`).then(d => d.poll),
+    queryFn: () => apiRequest<{ poll: Poll }>(`/polls/${id}`).then((d) => d.poll),
     enabled: !!id,
   });
 }
@@ -39,10 +44,11 @@ export function usePoll(id: string) {
 export function useCreatePoll() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: any) => apiRequest<{ poll: Poll }>("/polls", {
-      method: "POST",
-      body: JSON.stringify(data),
-    }),
+    mutationFn: (data: PollPayload) =>
+      apiRequest<{ poll: Poll }>("/polls", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["polls"] });
     },

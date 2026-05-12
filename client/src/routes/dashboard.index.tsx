@@ -21,22 +21,32 @@ import { BarChart3, CheckCircle2, Clock, FileText, Plus, Sparkles, Users } from 
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 
+type PollFilter = "all" | "active" | "expired" | "published";
+
 export const Route = createFileRoute("/dashboard/")({
-  head: () => ({ meta: [{ title: "Dashboard - PulsePoll" }, { name: "description", content: "Your polls and analytics" }] }),
+  head: () => ({
+    meta: [
+      { title: "Dashboard - PulsePoll" },
+      { name: "description", content: "Your polls and analytics" },
+    ],
+  }),
   component: Dashboard,
 });
 
 function Dashboard() {
   const { polls, loadingPolls, deletePoll } = useStore();
-  const [filter, setFilter] = useState<"all" | "active" | "expired" | "published">("all");
+  const [filter, setFilter] = useState<PollFilter>("all");
   const [q, setQ] = useState("");
 
-  const stats = useMemo(() => ({
-    total: polls.length,
-    responses: polls.reduce((s, p) => s + (p.responses || 0), 0),
-    active: polls.filter((p) => !p.expiresAt || new Date(p.expiresAt) > new Date()).length,
-    published: polls.filter((p) => p.resultsPublic).length,
-  }), [polls]);
+  const stats = useMemo(
+    () => ({
+      total: polls.length,
+      responses: polls.reduce((s, p) => s + (p.responses || 0), 0),
+      active: polls.filter((p) => !p.expiresAt || new Date(p.expiresAt) > new Date()).length,
+      published: polls.filter((p) => p.resultsPublic).length,
+    }),
+    [polls],
+  );
 
   const filtered = polls.filter((p) => {
     const isExpired = p.expiresAt && new Date(p.expiresAt) < new Date();
@@ -82,7 +92,9 @@ function Dashboard() {
           <Skeleton className="h-10 w-32" />
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-32 w-full" />)}
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-32 w-full" />
+          ))}
         </div>
       </div>
     );
@@ -96,15 +108,36 @@ function Dashboard() {
           <p className="text-muted-foreground text-sm mt-1">Your polls and pulse - at a glance.</p>
         </div>
         <Button asChild className="gradient-primary border-0 shadow-elegant">
-          <Link to="/dashboard/create"><Plus className="h-4 w-4 mr-1" /> New poll</Link>
+          <Link to="/dashboard/create">
+            <Plus className="h-4 w-4 mr-1" /> New poll
+          </Link>
         </Button>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatsCard label="Total polls" value={stats.total} icon={FileText} delay={0} />
-        <StatsCard label="Total responses" value={stats.responses.toLocaleString()} icon={Users} accent="primary" trend="Backend" delay={0.05} />
-        <StatsCard label="Active" value={stats.active} icon={Sparkles} accent="success" delay={0.1} />
-        <StatsCard label="Published" value={stats.published} icon={CheckCircle2} accent="warning" delay={0.15} />
+        <StatsCard
+          label="Total responses"
+          value={stats.responses.toLocaleString()}
+          icon={Users}
+          accent="primary"
+          trend="Backend"
+          delay={0.05}
+        />
+        <StatsCard
+          label="Active"
+          value={stats.active}
+          icon={Sparkles}
+          accent="success"
+          delay={0.1}
+        />
+        <StatsCard
+          label="Published"
+          value={stats.published}
+          icon={CheckCircle2}
+          accent="warning"
+          delay={0.15}
+        />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
@@ -127,11 +160,40 @@ function Dashboard() {
                     <stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
-                <XAxis dataKey="day" stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
-                <YAxis stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} width={28} />
-                <Tooltip contentStyle={{ background: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 12, fontSize: 12 }} />
-                <Area type="monotone" dataKey="v" stroke="var(--color-primary)" strokeWidth={2.5} fill="url(#gd)" />
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="var(--color-border)"
+                  vertical={false}
+                />
+                <XAxis
+                  dataKey="day"
+                  stroke="var(--color-muted-foreground)"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis
+                  stroke="var(--color-muted-foreground)"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                  width={28}
+                />
+                <Tooltip
+                  contentStyle={{
+                    background: "var(--color-popover)",
+                    border: "1px solid var(--color-border)",
+                    borderRadius: 12,
+                    fontSize: 12,
+                  }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="v"
+                  stroke="var(--color-primary)"
+                  strokeWidth={2.5}
+                  fill="url(#gd)"
+                />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -141,7 +203,10 @@ function Dashboard() {
           <h3 className="font-semibold">Recent activity</h3>
           <p className="text-xs text-muted-foreground">Latest pulse from your polls</p>
           <ul className="mt-4 space-y-3">
-            {(activity.length ? activity : [{ t: "Now", txt: "Create your first poll to see activity here", icon: BarChart3 }]).map((a, i) => (
+            {(activity.length
+              ? activity
+              : [{ t: "Now", txt: "Create your first poll to see activity here", icon: BarChart3 }]
+            ).map((a, i) => (
               <motion.li
                 key={i}
                 initial={{ opacity: 0, x: 8 }}
@@ -163,7 +228,7 @@ function Dashboard() {
       </div>
 
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        <Tabs value={filter} onValueChange={(v) => setFilter(v as any)}>
+        <Tabs value={filter} onValueChange={(v) => setFilter(v as PollFilter)}>
           <TabsList>
             <TabsTrigger value="all">All</TabsTrigger>
             <TabsTrigger value="active">Active</TabsTrigger>
@@ -171,7 +236,12 @@ function Dashboard() {
             <TabsTrigger value="expired">Expired</TabsTrigger>
           </TabsList>
         </Tabs>
-        <Input placeholder="Filter by title..." value={q} onChange={(e) => setQ(e.target.value)} className="sm:max-w-xs" />
+        <Input
+          placeholder="Filter by title..."
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          className="sm:max-w-xs"
+        />
       </div>
 
       {filtered.length === 0 ? (
@@ -180,9 +250,13 @@ function Dashboard() {
             <FileText className="h-6 w-6" />
           </div>
           <h3 className="mt-4 font-semibold">No polls found</h3>
-          <p className="text-sm text-muted-foreground mt-1">Try a different filter, or create your first poll.</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Try a different filter, or create your first poll.
+          </p>
           <Button asChild className="mt-4 gradient-primary border-0">
-            <Link to="/dashboard/create"><Plus className="h-4 w-4 mr-1" /> New poll</Link>
+            <Link to="/dashboard/create">
+              <Plus className="h-4 w-4 mr-1" /> New poll
+            </Link>
           </Button>
         </Card>
       ) : (

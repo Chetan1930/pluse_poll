@@ -6,17 +6,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { useAuth } from "@/lib/auth-store";
-import { apiRequest } from "@/lib/api";
+import { useStore } from "@/lib/api-store";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/login")({
-  head: () => ({ meta: [{ title: "Sign in - PulsePoll" }, { name: "description", content: "Sign in to PulsePoll" }] }),
+  head: () => ({
+    meta: [
+      { title: "Sign in - PulsePoll" },
+      { name: "description", content: "Sign in to PulsePoll" },
+    ],
+  }),
   component: Login,
 });
 
 function Login() {
-  const { setUser } = useAuth();
+  const { login } = useStore();
   const navigate = useNavigate();
   const [show, setShow] = useState(false);
   const [email, setEmail] = useState("");
@@ -30,11 +34,7 @@ function Login() {
 
     setLoading(true);
     try {
-      const data = await apiRequest<{ user: any }>("/auth/login", {
-        method: "POST",
-        body: JSON.stringify({ email, password: pw }),
-      });
-      setUser(data.user);
+      await login(email, pw);
       toast.success("Welcome back!");
       navigate({ to: "/dashboard" });
     } catch (err) {
@@ -55,8 +55,12 @@ function Login() {
           <span className="font-bold text-lg">PulsePoll</span>
         </Link>
         <div className="relative">
-          <h2 className="text-4xl font-bold leading-tight">"PulsePoll completely changed how our team gathers feedback. It feels effortless."</h2>
-          <p className="mt-6 text-primary-foreground/80">- Maya Chen, Head of Product at Northwind</p>
+          <h2 className="text-4xl font-bold leading-tight">
+            "PulsePoll completely changed how our team gathers feedback. It feels effortless."
+          </h2>
+          <p className="mt-6 text-primary-foreground/80">
+            - Maya Chen, Head of Product at Northwind
+          </p>
         </div>
         <div className="relative text-sm text-primary-foreground/70">(c) 2026 PulsePoll</div>
       </div>
@@ -81,27 +85,55 @@ function Login() {
             <form onSubmit={submit} className="space-y-4 mt-6">
               <div>
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="you@company.com" value={email} onChange={(e) => setEmail(e.target.value)} className="mt-1.5" required />
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="you@company.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="mt-1.5"
+                  required
+                />
               </div>
               <div>
                 <div className="flex items-center justify-between">
                   <Label htmlFor="pw">Password</Label>
-                  <a href="#" className="text-xs text-primary hover:underline">Forgot?</a>
+                  <a href="#" className="text-xs text-primary hover:underline">
+                    Forgot?
+                  </a>
                 </div>
                 <div className="relative mt-1.5">
-                  <Input id="pw" type={show ? "text" : "password"} placeholder="********" value={pw} onChange={(e) => setPw(e.target.value)} required />
-                  <button type="button" onClick={() => setShow(!show)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  <Input
+                    id="pw"
+                    type={show ? "text" : "password"}
+                    placeholder="********"
+                    value={pw}
+                    onChange={(e) => setPw(e.target.value)}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShow(!show)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
                     {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
               </div>
-              <Button type="submit" disabled={loading} className="w-full gradient-primary border-0 shadow-elegant h-11">
+              <Button
+                type="submit"
+                disabled={loading}
+                className="w-full gradient-primary border-0 shadow-elegant h-11"
+              >
                 {loading ? "Signing in..." : "Sign in"}
               </Button>
             </form>
 
             <p className="mt-6 text-center text-sm text-muted-foreground">
-              No account? <Link to="/signup" className="text-primary font-medium hover:underline">Sign up</Link>
+              No account?{" "}
+              <Link to="/signup" className="text-primary font-medium hover:underline">
+                Sign up
+              </Link>
             </p>
           </Card>
         </motion.div>

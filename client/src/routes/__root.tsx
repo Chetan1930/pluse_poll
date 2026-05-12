@@ -38,9 +38,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "PulsePoll — Real-time polls & feedback that feel premium" },
-      { name: "description", content: "PulsePoll is a modern polling and feedback platform with realtime analytics, beautiful charts, and a delightful builder." },
+      {
+        name: "description",
+        content:
+          "PulsePoll is a modern polling and feedback platform with realtime analytics, beautiful charts, and a delightful builder.",
+      },
       { property: "og:title", content: "PulsePoll — Real-time polls & feedback" },
-      { property: "og:description", content: "Modern polls with realtime analytics and beautiful charts." },
+      {
+        property: "og:description",
+        content: "Modern polls with realtime analytics and beautiful charts.",
+      },
       { property: "og:type", content: "website" },
     ],
     links: [{ rel: "stylesheet", href: appCss }],
@@ -53,7 +60,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head><HeadContent /></head>
+      <head>
+        <HeadContent />
+      </head>
       <body>
         {children}
         <Scripts />

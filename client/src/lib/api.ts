@@ -1,11 +1,11 @@
-const API_BASE_URL = "http://localhost:5000/api";
+const API_BASE_URL = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(
+  /\/+$/,
+  "",
+);
 
-export async function apiRequest<T>(
-  endpoint: string,
-  options: RequestInit = {}
-): Promise<T> {
+export async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
-  
+
   const response = await fetch(url, {
     ...options,
     headers: {
@@ -16,10 +16,10 @@ export async function apiRequest<T>(
     credentials: "include",
   });
 
-  const result = await response.json();
+  const result = await response.json().catch(() => null);
 
   if (!response.ok) {
-    throw new Error(result.message || "An error occurred");
+    throw new Error(result?.message || "An error occurred");
   }
 
   return result.data;

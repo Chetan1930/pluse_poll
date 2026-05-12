@@ -1,4 +1,5 @@
 import { Server } from 'socket.io';
+import { getAllowedOrigins } from '../config/env.js';
 
 let io = null;
 
@@ -7,9 +8,11 @@ let io = null;
  * @param {import('http').Server} httpServer
  */
 export const initSocket = (httpServer) => {
+  const allowedOrigins = getAllowedOrigins();
+
   io = new Server(httpServer, {
     cors: {
-      origin: process.env.CLIENT_URL?.split(',') || '*',
+      origin: allowedOrigins,
       methods: ['GET', 'POST'],
       credentials: true,
     },

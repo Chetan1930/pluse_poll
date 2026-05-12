@@ -1,141 +1,74 @@
-````markdown
-# Pluse_poll
+# PulsePoll
 
-## Project Overview
+PulsePoll is a hackathon-ready real-time polling app with a TanStack Start frontend and an Express/MongoDB backend.
 
-This project is a hackathon application split into two main parts:
+## Project Structure
 
-- `client` — the front-end user interface.
-- `server` — the back-end API and business logic.
+- `client/` - frontend app, routes, UI, and API client
+- `server/` - backend API, auth, polling logic, analytics, and Socket.IO
 
-The client communicates with the server to provide a complete user experience.
+## Prerequisites
 
-## Repository Structure
+- Node.js 18 or newer
+- MongoDB connection string
 
-- `client/` — front-end code, likely built with a JavaScript framework or library.
-- `server/` — back-end code, likely an API server with routes and database access.
-- `readme.md` — this project documentation.
+## Setup
 
-## Installation
-
-1. Clone the repository.
-2. Install dependencies for both client and server.
-
-Example:
+Install dependencies in both apps:
 
 ```bash
-cd "h:\Project\ChaiCode\Projects\Hacathon 3\server"
+cd server
 npm install
 
 cd ../client
 npm install
 ```
 
-## Running the Project
-
-### Server
+Create environment files:
 
 ```bash
-cd "h:\Project\ChaiCode\Projects\Hacathon 3\server"
+cp server/.env.example server/.env
+cp client/.env.example client/.env
+```
+
+Update `server/.env` with a real `MONGODB_URI`, a strong `JWT_SECRET`, and the frontend origin in `CLIENT_URL`.
+
+## Development
+
+Start the backend:
+
+```bash
+cd server
+npm run dev
+```
+
+Start the frontend:
+
+```bash
+cd client
+npm run dev
+```
+
+The frontend defaults to `http://localhost:5173` and calls `VITE_API_URL`, which defaults to `http://localhost:5000/api`.
+
+## Production Checklist
+
+- Set `NODE_ENV=production`.
+- Use a strong `JWT_SECRET` with at least 32 characters.
+- Set `CLIENT_URL` to the deployed frontend origin, for example `https://polls.example.com`.
+- Set `COOKIE_SECURE=true` in production.
+- If frontend and backend are on different sites, use `COOKIE_SAME_SITE=none` with HTTPS.
+- Set `TRUST_PROXY=true` only when running behind a trusted proxy or platform load balancer.
+- Run `npm run build` in `client` before deploying the frontend.
+- Run `npm start` in `server` for the backend process.
+
+## Verification
+
+```bash
+cd client
+npm run lint
+npm run build
+
+cd ../server
 npm start
 ```
-
-### Client
-
-```bash
-cd "h:\Project\ChaiCode\Projects\Hacathon 3\client"
-npm start
-```
-
-## Usage
-
-- Start the server first.
-- Then start the client.
-- Open the client in your browser to interact with the application.
-- The client should call the server API endpoints to perform actions.
-
-## Notes
-
-- Update the `client` and `server` README sections if you add more specific setup or environment variables.
-- If the server uses a database, add connection setup details here.
-- If the client needs environment configuration, document the required `.env` variables.
-
-## Contributing
-
-- Make changes in feature branches.
-- Test both client and server after updates.
-- Keep the API and front-end in sync.
-
-## License
-
-Add license information here if needed.// filepath: h:\Project\ChaiCode\Projects\Hacathon 3\readme.md
-# Hackathon 3
-
-## Project Overview
-
-This project is a hackathon application split into two main parts:
-
-- `client` — the front-end user interface.
-- `server` — the back-end API and business logic.
-
-The client communicates with the server to provide a complete user experience.
-
-## Repository Structure
-
-- `client/` — front-end code, likely built with a JavaScript framework or library.
-- `server/` — back-end code, likely an API server with routes and database access.
-- `readme.md` — this project documentation.
-
-## Installation
-
-1. Clone the repository.
-2. Install dependencies for both client and server.
-
-Example:
-
-```bash
-cd "h:\Project\ChaiCode\Projects\Hacathon 3\server"
-npm install
-
-cd ../client
-npm install
-```
-
-## Running the Project
-
-### Server
-
-```bash
-cd "h:\Project\ChaiCode\Projects\Hacathon 3\server"
-npm start
-```
-
-### Client
-
-```bash
-cd "h:\Project\ChaiCode\Projects\Hacathon 3\client"
-npm start
-```
-
-## Usage
-
-- Start the server first.
-- Then start the client.
-- Open the client in your browser to interact with the application.
-- The client should call the server API endpoints to perform actions.
-
-## Notes
-
-- Update the `client` and `server` README sections if you add more specific setup or environment variables.
-- If the server uses a database, add connection setup details here.
-- If the client needs environment configuration, document the required `.env` variables.
-
-## Contributing
-
-- Make changes in feature branches.
-- Test both client and server after updates.
-- Keep the API and front-end in sync.
-
-## License
-
-Add license information here if needed.

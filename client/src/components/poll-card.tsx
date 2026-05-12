@@ -45,7 +45,9 @@ export function PollCard({ poll, onDelete }: { poll: Poll; onDelete?: (id: strin
                 {poll.status}
               </Badge>
               {poll.anonymous && (
-                <Badge variant="outline" className="text-xs">Anonymous</Badge>
+                <Badge variant="outline" className="text-xs">
+                  Anonymous
+                </Badge>
               )}
             </div>
             <h3 className="font-semibold text-base leading-snug truncate">{poll.title}</h3>
@@ -59,15 +61,25 @@ export function PollCard({ poll, onDelete }: { poll: Poll; onDelete?: (id: strin
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem asChild>
-                <Link to="/p/$id" params={{ id: poll.id }}><Eye className="h-4 w-4 mr-2" />View poll</Link>
+                <Link to="/p/$id" params={{ id: poll.id }}>
+                  <Eye className="h-4 w-4 mr-2" />
+                  View poll
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link to="/dashboard/polls/$id" params={{ id: poll.id }}><BarChart3 className="h-4 w-4 mr-2" />Analytics</Link>
+                <Link to="/dashboard/polls/$id" params={{ id: poll.id }}>
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  Analytics
+                </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={copyLink}><Share2 className="h-4 w-4 mr-2" />Copy link</DropdownMenuItem>
+              <DropdownMenuItem onClick={copyLink}>
+                <Share2 className="h-4 w-4 mr-2" />
+                Copy link
+              </DropdownMenuItem>
               {onDelete && (
                 <DropdownMenuItem className="text-destructive" onClick={() => onDelete(poll.id)}>
-                  <Trash2 className="h-4 w-4 mr-2" />Delete
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
                 </DropdownMenuItem>
               )}
             </DropdownMenuContent>
@@ -76,14 +88,18 @@ export function PollCard({ poll, onDelete }: { poll: Poll; onDelete?: (id: strin
 
         <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
           <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" /> {poll.responses.toLocaleString()}</span>
+            <span className="flex items-center gap-1">
+              <Users className="h-3.5 w-3.5" /> {poll.responses.toLocaleString()}
+            </span>
             <span className="flex items-center gap-1">
               <Calendar className="h-3.5 w-3.5" />
               {formatDistanceToNow(new Date(poll.createdAt), { addSuffix: true })}
             </span>
           </div>
           <Button asChild variant="ghost" size="sm" className="h-7 text-xs">
-            <Link to="/dashboard/polls/$id" params={{ id: poll.id }}>View →</Link>
+            <Link to="/dashboard/polls/$id" params={{ id: poll.id }}>
+              View →
+            </Link>
           </Button>
         </div>
       </Card>

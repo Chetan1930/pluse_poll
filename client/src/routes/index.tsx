@@ -21,7 +21,11 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "PulsePoll - Professional Feedback & Real-time Insights" },
-      { name: "description", content: "The modern standard for gathering feedback. Create beautiful polls, analyze results in real-time, and make data-driven decisions." },
+      {
+        name: "description",
+        content:
+          "The modern standard for gathering feedback. Create beautiful polls, analyze results in real-time, and make data-driven decisions.",
+      },
     ],
   }),
   component: Landing,
@@ -53,7 +57,10 @@ function Hero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <Badge variant="outline" className="mb-6 py-1 px-4 rounded-full border-primary/20 bg-primary/5 text-primary font-medium">
+            <Badge
+              variant="outline"
+              className="mb-6 py-1 px-4 rounded-full border-primary/20 bg-primary/5 text-primary font-medium"
+            >
               <Sparkles className="h-3.5 w-3.5 mr-2 inline" />
               Trusted by 500+ forward-thinking teams
             </Badge>
@@ -84,10 +91,21 @@ function Hero() {
             transition={{ duration: 0.6, delay: 0.3 }}
             className="flex flex-col sm:flex-row items-center justify-center gap-4"
           >
-            <Button size="lg" asChild className="h-14 px-8 text-lg rounded-2xl gradient-primary border-0 shadow-elegant hover:scale-[1.02] transition-transform">
-              <Link to="/signup">Get started for free <ArrowRight className="ml-2 h-5 w-5" /></Link>
+            <Button
+              size="lg"
+              asChild
+              className="h-14 px-8 text-lg rounded-2xl gradient-primary border-0 shadow-elegant hover:scale-[1.02] transition-transform"
+            >
+              <Link to="/signup">
+                Get started for free <ArrowRight className="ml-2 h-5 w-5" />
+              </Link>
             </Button>
-            <Button size="lg" variant="outline" asChild className="h-14 px-8 text-lg rounded-2xl border-border/60 hover:bg-accent/50">
+            <Button
+              size="lg"
+              variant="outline"
+              asChild
+              className="h-14 px-8 text-lg rounded-2xl border-border/60 hover:bg-accent/50"
+            >
               <Link to="/login">Sign in to dashboard</Link>
             </Button>
           </motion.div>
@@ -99,9 +117,21 @@ function Hero() {
 
 function ValueProp() {
   const props = [
-    { icon: MousePointer2, title: "Frictionless", desc: "Respondents can answer in one click without creating an account." },
-    { icon: Layout, title: "Modern UI", desc: "A clean, distraction-free interface designed for maximum engagement." },
-    { icon: Globe, title: "Global Scale", desc: "Distributed infrastructure ensures your polls are fast, anywhere in the world." },
+    {
+      icon: MousePointer2,
+      title: "Frictionless",
+      desc: "Respondents can answer in one click without creating an account.",
+    },
+    {
+      icon: Layout,
+      title: "Modern UI",
+      desc: "A clean, distraction-free interface designed for maximum engagement.",
+    },
+    {
+      icon: Globe,
+      title: "Global Scale",
+      desc: "Distributed infrastructure ensures your polls are fast, anywhere in the world.",
+    },
   ];
 
   return (
@@ -168,7 +198,9 @@ function Features() {
     <section id="features" className="py-24">
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">Built for modern teams</h2>
+          <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">
+            Built for modern teams
+          </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
             Everything you need to gather, analyze, and act on feedback in one powerful platform.
           </p>
@@ -208,10 +240,15 @@ function CTA() {
             Ready to elevate your feedback?
           </h2>
           <p className="text-xl text-primary-foreground/80 mb-10">
-            Join the thousands of professionals who trust PulsePoll for their most critical insights.
+            Join the thousands of professionals who trust PulsePoll for their most critical
+            insights.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button size="lg" asChild className="h-14 px-10 text-lg rounded-2xl bg-background text-foreground hover:bg-background/90 shadow-soft">
+            <Button
+              size="lg"
+              asChild
+              className="h-14 px-10 text-lg rounded-2xl bg-background text-foreground hover:bg-background/90 shadow-soft"
+            >
               <Link to="/signup">Create your first poll</Link>
             </Button>
             <p className="text-sm text-primary-foreground/60">No credit card required</p>
@@ -235,10 +272,18 @@ function Footer() {
           </div>
 
           <nav className="flex flex-wrap justify-center gap-8 text-sm font-medium text-muted-foreground">
-            <a href="#features" className="hover:text-foreground transition-colors">Features</a>
-            <a href="#" className="hover:text-foreground transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-foreground transition-colors">Terms of Service</a>
-            <a href="#" className="hover:text-foreground transition-colors">Contact Support</a>
+            <a href="#features" className="hover:text-foreground transition-colors">
+              Features
+            </a>
+            <a href="#" className="hover:text-foreground transition-colors">
+              Privacy Policy
+            </a>
+            <a href="#" className="hover:text-foreground transition-colors">
+              Terms of Service
+            </a>
+            <a href="#" className="hover:text-foreground transition-colors">
+              Contact Support
+            </a>
           </nav>
 
           <div className="text-sm text-muted-foreground">

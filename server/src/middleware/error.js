@@ -7,6 +7,11 @@ const errorHandler = (err, req, res, next) => {
   let statusCode = err.statusCode || HTTP_STATUS.INTERNAL_ERROR;
   let message = err.message || 'Internal server error';
 
+  if (err.type === 'entity.parse.failed') {
+    statusCode = HTTP_STATUS.BAD_REQUEST;
+    message = 'Request body contains invalid JSON';
+  }
+
   // Mongoose validation error
   if (err.name === 'ValidationError') {
     statusCode = HTTP_STATUS.BAD_REQUEST;

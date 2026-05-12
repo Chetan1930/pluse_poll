@@ -1,5 +1,14 @@
 import { createFileRoute, Outlet, Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { BarChart3, LayoutDashboard, PlusCircle, Bell, Search, Sun, Moon, Menu } from "lucide-react";
+import {
+  BarChart3,
+  LayoutDashboard,
+  PlusCircle,
+  Bell,
+  Search,
+  Sun,
+  Moon,
+  Menu,
+} from "lucide-react";
 import { useAuth } from "@/lib/auth-store";
 import { Button } from "@/components/ui/button";
 import { UserMenu } from "@/components/user-menu";
@@ -50,7 +59,12 @@ function SidebarContent({ path }: { path: string }) {
         <div className="relative">
           <p className="text-xs uppercase tracking-wider opacity-80">Pro plan</p>
           <p className="mt-1 font-semibold">Unlock advanced analytics</p>
-          <Button size="sm" className="mt-3 bg-background text-foreground hover:bg-background/90 w-full rounded-xl">Upgrade</Button>
+          <Button
+            size="sm"
+            className="mt-3 bg-background text-foreground hover:bg-background/90 w-full rounded-xl"
+          >
+            Upgrade
+          </Button>
         </div>
       </div>
     </div>
