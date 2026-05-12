@@ -2,6 +2,7 @@ import { createFileRoute, Outlet, Link, useRouterState, useNavigate } from "@tan
 import {
   BarChart3,
   LayoutDashboard,
+  Loader2,
   PlusCircle,
   Bell,
   Search,
@@ -78,11 +79,22 @@ function DashLayout() {
 
   useEffect(() => {
     if (isHydrated && !user) {
-      navigate({ to: "/login" });
+      navigate({ to: "/login", search: { redirect: path } });
     }
-  }, [user, isHydrated, navigate]);
+  }, [user, isHydrated, navigate, path]);
 
-  if (!isHydrated) return null;
+  if (!isHydrated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-12 w-12 rounded-2xl gradient-primary flex items-center justify-center shadow-elegant">
+            <BarChart3 className="h-6 w-6 text-primary-foreground" />
+          </div>
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex bg-background">

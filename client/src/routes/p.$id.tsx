@@ -109,7 +109,13 @@ function PublicPoll() {
       await vote(poll.id, answers);
       setSubmitted(true);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Unable to submit response");
+      const msg = error instanceof Error ? error.message : "Unable to submit response";
+      if (msg.toLowerCase().includes("already submitted")) {
+        setSubmitted(true);
+        toast.info("You've already responded to this poll.");
+      } else {
+        toast.error(msg);
+      }
     }
   };
 

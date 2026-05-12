@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BarChart3, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,33 +16,47 @@ export const Route = createFileRoute("/login")({
       { name: "description", content: "Sign in to PulsePoll" },
     ],
   }),
+  validateSearch: (search: Record<string, unknown>) => ({
+    redirect: (search.redirect as string) ?? "",
+  }),
   component: Login,
 });
 
 function Login() {
-  const { login } = useStore();
+  const { login, user, authReady } = useStore();
   const navigate = useNavigate();
+  const { redirect } = Route.useSearch();
   const [show, setShow] = useState(false);
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Redirect authenticated users away from login page
+  useEffect(() => {
+    if (authReady && user) {
+      navigate({ to: (redirect as any) || "/dashboard" });
+    }
+  }, [user, authReady, navigate, redirect]);
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!/^\S+@\S+\.\S+$/.test(email)) return toast.error("Enter a valid email");
-    if (pw.length < 6) return toast.error("Password must be at least 6 characters");
+    if (!pw) return toast.error("Password is required");
 
     setLoading(true);
     try {
       await login(email, pw);
       toast.success("Welcome back!");
-      navigate({ to: "/dashboard" });
+      navigate({ to: (redirect as any) || "/dashboard" });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Unable to sign in");
     } finally {
       setLoading(false);
     }
   };
+
+  // Don't flash form while checking existing session
+  if (!authReady) return null;
 
   return (
     <div className="min-h-screen grid lg:grid-cols-2 bg-background">
@@ -59,10 +73,10 @@ function Login() {
             "PulsePoll completely changed how our team gathers feedback. It feels effortless."
           </h2>
           <p className="mt-6 text-primary-foreground/80">
-            - Maya Chen, Head of Product at Northwind
+            — Maya Chen, Head of Product at Northwind
           </p>
         </div>
-        <div className="relative text-sm text-primary-foreground/70">(c) 2026 PulsePoll</div>
+        <div className="relative text-sm text-primary-foreground/70">© 2026 PulsePoll</div>
       </div>
 
       <div className="flex items-center justify-center p-6 sm:p-12">
@@ -93,28 +107,28 @@ function Login() {
                   onChange={(e) => setEmail(e.target.value)}
                   className="mt-1.5"
                   required
+                  autoComplete="email"
                 />
               </div>
               <div>
                 <div className="flex items-center justify-between">
                   <Label htmlFor="pw">Password</Label>
-                  <a href="#" className="text-xs text-primary hover:underline">
-                    Forgot?
-                  </a>
                 </div>
                 <div className="relative mt-1.5">
                   <Input
                     id="pw"
                     type={show ? "text" : "password"}
-                    placeholder="********"
+                    placeholder="Your password"
                     value={pw}
                     onChange={(e) => setPw(e.target.value)}
                     required
+                    autoComplete="current-password"
                   />
                   <button
                     type="button"
                     onClick={() => setShow(!show)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    aria-label={show ? "Hide password" : "Show password"}
                   >
                     {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>

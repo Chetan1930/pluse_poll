@@ -43,6 +43,26 @@ export const protect = async (req, res, next) => {
 };
 
 /**
+ * Require a specific role (or one of several roles).
+ * Must be used after `protect` so req.user is set.
+ *
+ * Usage: router.get('/admin', protect, requireRole('admin'), handler)
+ */
+export const requireRole = (...roles) => (req, res, next) => {
+  if (!req.user) {
+    return sendError(res, HTTP_STATUS.UNAUTHORIZED, 'Authentication required');
+  }
+  if (!roles.includes(req.user.role)) {
+    return sendError(
+      res,
+      HTTP_STATUS.FORBIDDEN,
+      `Access denied: requires one of [${roles.join(', ')}] role`,
+    );
+  }
+  next();
+};
+
+/**
  * Optionally attach user if a valid token is present.
  * Does NOT reject unauthenticated requests.
  */

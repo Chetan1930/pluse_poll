@@ -1,8 +1,10 @@
 import { useNavigate } from "@tanstack/react-router";
-import { LogOut, LayoutDashboard, Settings } from "lucide-react";
+import { LogOut, LayoutDashboard, Settings, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/lib/auth-store";
+import { useStore } from "@/lib/api-store";
 import { apiRequest } from "@/lib/api";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,7 +17,9 @@ import { toast } from "sonner";
 
 export function UserMenu() {
   const { user, logout } = useAuth();
+  const { user: storeUser } = useStore();
   const navigate = useNavigate();
+  const role = storeUser?.role ?? "user";
 
   if (!user) return null;
 
@@ -45,7 +49,14 @@ export function UserMenu() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56 p-1 shadow-elegant">
         <div className="px-2 py-2.5">
-          <p className="text-sm font-semibold leading-none">{user.name}</p>
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-semibold leading-none">{user.name}</p>
+            {role === "admin" && (
+              <Badge className="h-4 text-[10px] px-1.5 bg-primary/15 text-primary border-primary/20 flex items-center gap-1">
+                <ShieldCheck className="h-2.5 w-2.5" /> Admin
+              </Badge>
+            )}
+          </div>
           <p className="text-xs text-muted-foreground mt-1 truncate">{user.email}</p>
         </div>
         <DropdownMenuSeparator />

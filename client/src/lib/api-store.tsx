@@ -26,9 +26,10 @@ export type Poll = {
   status: "draft" | "active" | "expired" | "published";
   responses: number;
   resultsPublic: boolean;
+  participationRate: number;
 };
 
-type User = { id?: string; name: string; email: string } | null;
+type User = { id?: string; name: string; email: string; role?: "user" | "admin" } | null;
 
 type Ctx = {
   user: User;
@@ -68,6 +69,7 @@ type ApiUser = {
   id?: string;
   name: string;
   email: string;
+  role?: "user" | "admin";
 };
 
 type ApiOption = { _id: string; text: string };
@@ -120,6 +122,7 @@ const toUser = (user: ApiUser): NonNullable<User> => ({
   id: user._id || user.id,
   name: user.name,
   email: user.email,
+  role: user.role ?? "user",
 });
 
 const persistAuthUser = (user: User) => {
@@ -163,6 +166,7 @@ const mapPoll = (poll: ApiPoll, analytics?: ApiAnalytics): Poll => {
         : "active",
     responses: analytics?.totalResponses || 0,
     resultsPublic: poll.resultsPublished,
+    participationRate: analytics?.participationRate ?? 0,
     questions: poll.questions.map((question) => ({
       id: question._id,
       text: question.text,

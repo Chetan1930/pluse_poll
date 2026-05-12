@@ -2,16 +2,20 @@ import { Router } from 'express';
 import {
   createPoll,
   getMyPolls,
+  getAllPollsAdmin,
   getPollById,
   updatePoll,
   deletePoll,
   publishResults,
 } from '../controllers/pollController.js';
-import { protect, optionalAuth } from '../middleware/auth.js';
+import { protect, optionalAuth, requireRole } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { createPollSchema, updatePollSchema } from '../validations/poll.js';
 
 const router = Router();
+
+// Admin-only: view all polls across all users
+router.get('/admin', protect, requireRole('admin'), getAllPollsAdmin);
 
 // Authenticated poll management
 router.post('/', protect, validate(createPollSchema), createPoll);

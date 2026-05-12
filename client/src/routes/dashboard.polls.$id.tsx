@@ -1,24 +1,37 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
-import { useStore } from "@/lib/api-store";
+import { useCallback, useEffect, useState } from "react";
+import { useStore, type Question } from "@/lib/api-store";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { StatsCard } from "@/components/stats-card";
-import { ArrowLeft, BarChart3, Globe2, Share2, Trash2, Trophy, Users, Zap } from "lucide-react";
+import { EditPollDialog } from "@/components/edit-poll-dialog";
+import { usePollSocket, type PollUpdatedPayload } from "@/hooks/use-poll-socket";
+import {
+  ArrowLeft,
+  BarChart3,
+  Globe2,
+  Pencil,
+  Share2,
+  Trash2,
+  Trophy,
+  Users,
+  Wifi,
+  Zap,
+} from "lucide-react";
 import {
   Bar,
   BarChart,
   CartesianGrid,
   Cell,
+  Legend,
   Pie,
   PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
-  Legend,
 } from "recharts";
 import { toast } from "sonner";
 import {
@@ -54,16 +67,51 @@ function Analytics() {
   const { polls, getPoll, publishPoll, deletePoll } = useStore();
   const poll = polls.find((p) => p.id === id);
   const navigate = useNavigate();
-  const [liveResp, setLiveResp] = useState(poll?.responses ?? 0);
 
+  // Live state updated by both initial load and socket events
+  const [liveResp, setLiveResp] = useState(poll?.responses ?? 0);
+  const [liveRate, setLiveRate] = useState(poll?.participationRate ?? 0);
+  const [liveQuestions, setLiveQuestions] = useState<Question[]>(poll?.questions ?? []);
+  const [isLive, setIsLive] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+
+  // Keep live state in sync when poll loads from API
   useEffect(() => {
-    if (poll) setLiveResp(poll.responses);
+    if (poll) {
+      setLiveResp(poll.responses);
+      setLiveRate(poll.participationRate);
+      setLiveQuestions(poll.questions);
+    }
   }, [poll]);
+
+  // Fetch poll on mount
   useEffect(() => {
     getPoll(id).catch((error) =>
       toast.error(error instanceof Error ? error.message : "Unable to load poll"),
     );
   }, [getPoll, id]);
+
+  // Real-time socket updates
+  const handleSocketUpdate = useCallback((payload: PollUpdatedPayload) => {
+    setIsLive(true);
+    setLiveResp(payload.totalResponses);
+    setLiveRate(payload.analytics.participationRate);
+    setLiveQuestions((prev) =>
+      prev.map((q) => {
+        const qs = payload.analytics.questionSummaries.find((s) => s.questionId === q.id);
+        if (!qs) return q;
+        return {
+          ...q,
+          options: q.options.map((o) => {
+            const opt = qs.options.find((s) => s.optionId === o.id);
+            return opt ? { ...o, votes: opt.votes } : o;
+          }),
+        };
+      }),
+    );
+  }, []);
+
+  usePollSocket(id, handleSocketUpdate);
 
   if (!poll) {
     return (
@@ -76,17 +124,17 @@ function Analytics() {
     );
   }
 
-  const totalVotes = poll.questions[0]?.options.reduce((s, o) => s + o.votes, 0) || 1;
-  const top = [...(poll.questions[0]?.options || [])].sort((a, b) => b.votes - a.votes)[0];
+  const top = [...(liveQuestions[0]?.options || [])].sort((a, b) => b.votes - a.votes)[0];
 
   const copyLink = () => {
     navigator.clipboard.writeText(`${window.location.origin}/p/${poll.id}`);
     toast.success("Public link copied");
   };
+
   const publish = async () => {
     try {
       await publishPoll(poll.id);
-      toast.success("Results published");
+      toast.success("Results published publicly");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Unable to publish results");
     }
@@ -94,6 +142,7 @@ function Analytics() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
+      {/* Header */}
       <div>
         <Button variant="ghost" size="sm" asChild className="mb-2 -ml-2">
           <Link to="/dashboard">
@@ -102,7 +151,7 @@ function Analytics() {
         </Button>
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-3">
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <Badge
                 variant="outline"
                 className={
@@ -116,13 +165,25 @@ function Analytics() {
                 {poll.status}
               </Badge>
               {poll.anonymous && <Badge variant="outline">Anonymous</Badge>}
+              {isLive && (
+                <Badge className="bg-destructive/15 text-destructive border-destructive/20 flex items-center gap-1">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-destructive" />
+                  </span>
+                  LIVE
+                </Badge>
+              )}
             </div>
             <h1 className="text-3xl font-bold tracking-tight mt-2">{poll.title}</h1>
             <p className="text-muted-foreground text-sm mt-1">{poll.description}</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={copyLink}>
               <Share2 className="h-4 w-4 mr-1" /> Share
+            </Button>
+            <Button variant="outline" onClick={() => setEditOpen(true)}>
+              <Pencil className="h-4 w-4 mr-1" /> Edit
             </Button>
             {poll.resultsPublic ? (
               <Button asChild variant="outline">
@@ -141,8 +202,8 @@ function Analytics() {
                   <DialogHeader>
                     <DialogTitle>Publish results publicly?</DialogTitle>
                     <DialogDescription>
-                      Anyone with the link will be able to see final vote counts and charts. You can
-                      unpublish later.
+                      Anyone with the link will be able to see final vote counts and charts. This
+                      action cannot be undone.
                     </DialogDescription>
                   </DialogHeader>
                   <DialogFooter>
@@ -163,7 +224,7 @@ function Analytics() {
                 <DialogHeader>
                   <DialogTitle>Delete this poll?</DialogTitle>
                   <DialogDescription>
-                    This action can't be undone. All responses will be lost.
+                    This action can't be undone. All responses will be permanently deleted.
                   </DialogDescription>
                 </DialogHeader>
                 <DialogFooter>
@@ -183,17 +244,18 @@ function Analytics() {
         </div>
       </div>
 
+      {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatsCard
           label="Total responses"
           value={liveResp.toLocaleString()}
           icon={Users}
           accent="primary"
-          trend="Backend"
+          trend={isLive ? "Live" : "Loaded"}
         />
         <StatsCard
-          label="Participation"
-          value={`${Math.min(99, Math.round((liveResp / 2000) * 100))}%`}
+          label="Participation rate"
+          value={`${liveRate}%`}
           icon={Zap}
           accent="success"
           delay={0.05}
@@ -205,11 +267,25 @@ function Analytics() {
           accent="warning"
           delay={0.1}
         />
-        <StatsCard label="Questions" value={poll.questions.length} icon={BarChart3} delay={0.15} />
+        <StatsCard
+          label="Questions"
+          value={liveQuestions.length}
+          icon={BarChart3}
+          delay={0.15}
+        />
       </div>
 
+      {/* Real-time indicator */}
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <Wifi className={`h-3.5 w-3.5 ${isLive ? "text-success" : "text-muted-foreground"}`} />
+        {isLive
+          ? "Connected — charts update in real time as responses arrive"
+          : "Waiting for live connection..."}
+      </div>
+
+      {/* Per-question charts */}
       <div className="space-y-4">
-        {poll.questions.map((q, qi) => {
+        {liveQuestions.map((q, qi) => {
           const data = q.options.map((o) => ({ name: o.text, votes: o.votes }));
           const sum = q.options.reduce((s, o) => s + o.votes, 0) || 1;
           return (
@@ -308,7 +384,9 @@ function Analytics() {
                           style={{ background: COLORS[i % COLORS.length] }}
                         />
                         <span className="flex-1 truncate">{o.text}</span>
-                        <span className="font-medium tabular-nums">{o.votes.toLocaleString()}</span>
+                        <span className="font-medium tabular-nums">
+                          {o.votes.toLocaleString()}
+                        </span>
                         <span className="text-muted-foreground tabular-nums w-10 text-right">
                           {pct}%
                         </span>
@@ -321,6 +399,9 @@ function Analytics() {
           );
         })}
       </div>
+
+      {/* Edit dialog */}
+      <EditPollDialog poll={poll} open={editOpen} onOpenChange={setEditOpen} />
     </div>
   );
 }

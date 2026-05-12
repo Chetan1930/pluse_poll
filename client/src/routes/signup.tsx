@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BarChart3, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,8 +19,20 @@ export const Route = createFileRoute("/signup")({
   component: Signup,
 });
 
+const passwordStrength = (pw: string) => {
+  if (!pw) return { score: 0, label: "" };
+  let score = 0;
+  if (pw.length >= 8) score++;
+  if (/\d/.test(pw)) score++;
+  if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) score++;
+  if (/[^a-zA-Z\d]/.test(pw)) score++;
+  const labels = ["", "Weak", "Fair", "Good", "Strong"];
+  const colors = ["", "text-destructive", "text-orange-500", "text-yellow-500", "text-success"];
+  return { score, label: labels[score], color: colors[score] };
+};
+
 function Signup() {
-  const { register } = useStore();
+  const { register, user, authReady } = useStore();
   const navigate = useNavigate();
   const [show, setShow] = useState(false);
   const [name, setName] = useState("");
@@ -28,22 +40,35 @@ function Signup() {
   const [pw, setPw] = useState("");
   const [errs, setErrs] = useState<Record<string, string>>({});
 
+  // Redirect authenticated users away from signup page
+  useEffect(() => {
+    if (authReady && user) {
+      navigate({ to: "/dashboard" });
+    }
+  }, [user, authReady, navigate]);
+
+  const strength = passwordStrength(pw);
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const e2: Record<string, string> = {};
-    if (name.trim().length < 2) e2.name = "Tell us your name";
-    if (!/^\S+@\S+\.\S+$/.test(email)) e2.email = "Enter a valid email";
-    if (pw.length < 6) e2.pw = "Min 6 characters";
+    if (name.trim().length < 2) e2.name = "Tell us your name (at least 2 characters)";
+    if (!/^\S+@\S+\.\S+$/.test(email)) e2.email = "Enter a valid email address";
+    if (pw.length < 8) e2.pw = "Password must be at least 8 characters";
+    else if (!/\d/.test(pw)) e2.pw = "Password must contain at least one number";
     setErrs(e2);
     if (Object.keys(e2).length) return;
     try {
       await register(name, email, pw);
-      toast.success("Account created - welcome!");
+      toast.success("Account created — welcome!");
       navigate({ to: "/dashboard" });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Unable to create account");
     }
   };
+
+  // Don't flash form while checking existing session
+  if (!authReady) return null;
 
   return (
     <div className="min-h-screen grid lg:grid-cols-2 bg-background">
@@ -75,6 +100,7 @@ function Signup() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="mt-1.5"
+                  autoComplete="name"
                 />
                 {errs.name && <p className="text-xs text-destructive mt-1">{errs.name}</p>}
               </div>
@@ -87,6 +113,7 @@ function Signup() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="mt-1.5"
+                  autoComplete="email"
                 />
                 {errs.email && <p className="text-xs text-destructive mt-1">{errs.email}</p>}
               </div>
@@ -96,18 +123,39 @@ function Signup() {
                   <Input
                     id="pw"
                     type={show ? "text" : "password"}
-                    placeholder="At least 6 characters"
+                    placeholder="Min 8 characters, includes a number"
                     value={pw}
                     onChange={(e) => setPw(e.target.value)}
+                    autoComplete="new-password"
                   />
                   <button
                     type="button"
                     onClick={() => setShow(!show)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    aria-label={show ? "Hide password" : "Show password"}
                   >
                     {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
+                {pw && (
+                  <div className="mt-1.5 flex items-center gap-2">
+                    <div className="flex gap-1 flex-1">
+                      {[1, 2, 3, 4].map((s) => (
+                        <div
+                          key={s}
+                          className={`h-1 flex-1 rounded-full transition-colors ${
+                            strength.score >= s ? "bg-primary" : "bg-muted"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    {strength.label && (
+                      <span className={`text-xs font-medium ${strength.color}`}>
+                        {strength.label}
+                      </span>
+                    )}
+                  </div>
+                )}
                 {errs.pw && <p className="text-xs text-destructive mt-1">{errs.pw}</p>}
               </div>
               <Button
