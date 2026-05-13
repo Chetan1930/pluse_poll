@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { z } from "zod";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMemo, useState } from "react";
 import { useStore } from "@/lib/api-store";
@@ -38,7 +39,10 @@ import { toast } from "sonner";
 type PollFilter = "all" | "active" | "expired" | "published";
 type SortKey = "newest" | "oldest" | "responses";
 
+const searchSchema = z.object({ q: z.string().default("") });
+
 export const Route = createFileRoute("/dashboard/")({
+  validateSearch: searchSchema,
   head: () => ({
     meta: [
       { title: "Dashboard - PulsePoll" },
@@ -51,9 +55,12 @@ export const Route = createFileRoute("/dashboard/")({
 function Dashboard() {
   const { polls, loadingPolls, deletePoll, user } = useStore();
   const navigate = useNavigate();
+  const { q } = Route.useSearch();
   const [filter, setFilter] = useState<PollFilter>("all");
   const [sort, setSort] = useState<SortKey>("newest");
-  const [q, setQ] = useState("");
+
+  const setQ = (val: string) =>
+    navigate({ to: "/dashboard", search: (prev) => ({ ...prev, q: val }), replace: true });
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
@@ -75,11 +82,20 @@ function Dashboard() {
       d.setDate(d.getDate() - (13 - i));
       return d.toISOString().slice(0, 10);
     });
+
+    const responseCounts = polls.reduce(
+      (counts, poll) => {
+        poll.responseHistory.forEach((entry) => {
+          counts[entry.date] = (counts[entry.date] || 0) + entry.count;
+        });
+        return counts;
+      },
+      {} as Record<string, number>,
+    );
+
     return days.map((key) => ({
       day: new Date(key).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
-      v: polls
-        .filter((poll) => poll.createdAt.slice(0, 10) === key)
-        .reduce((sum, poll) => sum + poll.responses, 0),
+      v: responseCounts[key] || 0,
     }));
   }, [polls]);
 
@@ -443,6 +459,7 @@ function Dashboard() {
           value={q}
           onChange={(e) => setQ(e.target.value)}
           className="sm:max-w-xs h-9 text-sm rounded-xl"
+          aria-label="Search polls"
         />
       </motion.div>
 

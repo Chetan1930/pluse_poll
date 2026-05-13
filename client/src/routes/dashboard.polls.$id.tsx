@@ -23,6 +23,8 @@ import {
   Wifi,
 } from "lucide-react";
 import {
+  Area,
+  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
@@ -325,6 +327,80 @@ function Analytics() {
           delay={0.15}
         />
       </div>
+
+      {/* Response timeline */}
+      {poll.responseHistory.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <Card className="p-6 shadow-soft border-border/60">
+            <div className="mb-4">
+              <h3 className="font-semibold">Response timeline</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">Responses received per day</p>
+            </div>
+            <div className="h-52">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart
+                  data={poll.responseHistory.map((r) => ({
+                    day: new Date(r.date).toLocaleDateString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                    }),
+                    responses: r.count,
+                  }))}
+                  margin={{ top: 4, right: 4, left: -12, bottom: 0 }}
+                >
+                  <defs>
+                    <linearGradient id="timelineFill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="var(--color-primary)" stopOpacity={0.4} />
+                      <stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="var(--color-border)"
+                    vertical={false}
+                  />
+                  <XAxis
+                    dataKey="day"
+                    stroke="var(--color-muted-foreground)"
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    stroke="var(--color-muted-foreground)"
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                    width={24}
+                    allowDecimals={false}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      background: "var(--color-popover)",
+                      border: "1px solid var(--color-border)",
+                      borderRadius: 12,
+                      fontSize: 12,
+                    }}
+                    labelStyle={{ fontWeight: 600 }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="responses"
+                    stroke="var(--color-primary)"
+                    strokeWidth={2.5}
+                    fill="url(#timelineFill)"
+                    animationDuration={1000}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </Card>
+        </motion.div>
+      )}
 
       {/* Real-time indicator */}
       <div className="flex items-center gap-2 text-xs text-muted-foreground">

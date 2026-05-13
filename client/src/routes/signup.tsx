@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { useStore } from "@/lib/api-store";
+import { signupFormSchema } from "@/lib/validation";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/signup")({
@@ -94,17 +95,23 @@ function Signup() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const e2: Record<string, string> = {};
-    if (name.trim().length < 2) e2.name = "Tell us your name (at least 2 characters)";
-    if (!/^\S+@\S+\.\S+$/.test(email)) e2.email = "Enter a valid email address";
-    if (pw.length < 8) e2.pw = "Password must be at least 8 characters";
-    else if (!/\d/.test(pw)) e2.pw = "Password must contain at least one number";
-    setErrs(e2);
-    if (Object.keys(e2).length) return;
+    const parsed = signupFormSchema.safeParse({ name, email, password: pw });
+
+    if (!parsed.success) {
+      const { fieldErrors } = parsed.error.flatten();
+      setErrs({
+        name: fieldErrors.name?.[0] || "",
+        email: fieldErrors.email?.[0] || "",
+        pw: fieldErrors.password?.[0] || "",
+      });
+      return;
+    }
+
+    setErrs({});
 
     setLoading(true);
     try {
-      await register(name, email, pw);
+      await register(parsed.data.name, parsed.data.email, parsed.data.password);
       toast.success("Account created — welcome!");
       navigate({ to: (redirect as any) || "/dashboard" });
     } catch (error) {

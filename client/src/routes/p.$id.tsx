@@ -13,6 +13,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { CheckCircle2, Clock, BarChart3, ArrowRight, LogIn, UserPlus } from "lucide-react";
+import { createPollResponseSchema, getFirstValidationMessage } from "@/lib/validation";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -27,6 +28,7 @@ function PublicPoll() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const { getPoll, vote } = useStore();
+  const draftStorageKey = `pp_vote_draft_${id}`;
   const [poll, setPoll] = useState<import("@/lib/api-store").Poll | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
@@ -34,13 +36,12 @@ function PublicPoll() {
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem(`pp_vote_${id}`);
+    const stored = localStorage.getItem(draftStorageKey);
     if (stored) {
       try {
         setAnswers(JSON.parse(stored));
-        setSubmitted(true);
       } catch {
-        // ignore malformed entry
+        localStorage.removeItem(draftStorageKey);
       }
     }
     setLoading(true);
@@ -48,7 +49,21 @@ function PublicPoll() {
       .then(setPoll)
       .catch(() => setPoll(null))
       .finally(() => setLoading(false));
-  }, [getPoll, id]);
+  }, [draftStorageKey, getPoll, id]);
+
+  useEffect(() => {
+    if (submitted) {
+      localStorage.removeItem(draftStorageKey);
+      return;
+    }
+
+    if (Object.keys(answers).length === 0) {
+      localStorage.removeItem(draftStorageKey);
+      return;
+    }
+
+    localStorage.setItem(draftStorageKey, JSON.stringify(answers));
+  }, [answers, draftStorageKey, submitted]);
 
   const expired = useMemo(() => poll?.expiresAt && new Date(poll.expiresAt) < new Date(), [poll]);
 
@@ -121,17 +136,25 @@ function PublicPoll() {
   }
 
   const submit = async () => {
-    for (const q of poll.questions) {
-      if (q.required && !answers[q.id]) return toast.error(`Please answer: "${q.text}"`);
+    const requiredQuestionIds = poll.questions
+      .filter((question) => question.required)
+      .map((question) => question.id);
+    const parsed = createPollResponseSchema(requiredQuestionIds).safeParse({ answers });
+
+    if (!parsed.success) {
+      return toast.error(
+        getFirstValidationMessage(parsed.error, "Please answer all required questions"),
+      );
     }
+
     try {
-      await vote(poll.id, answers);
-      localStorage.setItem(`pp_vote_${poll.id}`, JSON.stringify(answers));
+      await vote(poll.id, parsed.data.answers);
+      localStorage.removeItem(draftStorageKey);
       setSubmitted(true);
     } catch (error) {
       const msg = error instanceof Error ? error.message : "Unable to submit response";
       if (msg.toLowerCase().includes("already submitted")) {
-        localStorage.setItem(`pp_vote_${poll.id}`, JSON.stringify(answers));
+        localStorage.removeItem(draftStorageKey);
         setSubmitted(true);
         toast.info("You've already responded to this poll.");
       } else if (msg.toLowerCase().includes("authentication") || msg.toLowerCase().includes("sign in")) {

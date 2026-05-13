@@ -25,6 +25,7 @@ import {
   Save,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getFirstValidationMessage, pollBuilderSchema } from "@/lib/validation";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/dashboard/create")({
@@ -85,28 +86,26 @@ function CreatePoll() {
     });
   };
 
-  const validate = () => {
-    if (!title.trim()) return "Add a poll title";
-    if (!expiresAt) return "Please choose an expiry date";
-    if (expiresAt <= new Date()) return "Expiry date must be in the future";
-    for (const q of questions) {
-      if (!q.text.trim()) return "All questions need text";
-      if (q.options.length < 2) return "Each question needs ≥ 2 options";
-      if (q.options.some((o) => !o.text.trim())) return "All options need text";
-    }
-    return null;
-  };
-
   const submit = async () => {
-    const err = validate();
-    if (err) return toast.error(err);
+    const parsed = pollBuilderSchema.safeParse({
+      title,
+      description: desc,
+      anonymous,
+      expiresAt,
+      questions,
+    });
+
+    if (!parsed.success) {
+      return toast.error(getFirstValidationMessage(parsed.error, "Please fix the poll before publishing"));
+    }
+
     try {
       const poll = await addPoll({
-        title: title.trim(),
-        description: desc.trim(),
-        questions,
-        expiresAt: expiresAt ? expiresAt.toISOString() : null,
-        anonymous,
+        title: parsed.data.title,
+        description: parsed.data.description,
+        questions: parsed.data.questions,
+        expiresAt: parsed.data.expiresAt.toISOString(),
+        anonymous: parsed.data.anonymous,
       });
       toast.success("Poll created!");
       navigate({ to: "/dashboard/polls/$id", params: { id: poll.id } });

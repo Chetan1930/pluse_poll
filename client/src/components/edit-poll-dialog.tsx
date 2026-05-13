@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { ArrowDown, ArrowUp, CalendarIcon, Clock, GripVertical, Plus, Save, Trash2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getFirstValidationMessage, pollBuilderSchema } from "@/lib/validation";
 import { toast } from "sonner";
 
 const uid = () => Math.random().toString(36).slice(2, 9);
@@ -66,28 +67,27 @@ export function EditPollDialog({ poll, open, onOpenChange }: EditPollDialogProps
     });
   };
 
-  const validate = () => {
-    if (!title.trim()) return "Poll title is required";
-    if (!expiresAt) return "Please choose an expiry date";
-    for (const q of questions) {
-      if (!q.text.trim()) return "All questions must have text";
-      if (q.options.length < 2) return "Each question needs at least 2 options";
-      if (q.options.some((o) => !o.text.trim())) return "All options must have text";
-    }
-    return null;
-  };
-
   const handleSave = async () => {
-    const err = validate();
-    if (err) return toast.error(err);
+    const parsed = pollBuilderSchema.safeParse({
+      title,
+      description: desc,
+      anonymous,
+      expiresAt,
+      questions,
+    });
+
+    if (!parsed.success) {
+      return toast.error(getFirstValidationMessage(parsed.error, "Please fix the poll before saving"));
+    }
+
     setSaving(true);
     try {
       await updatePoll(poll.id, {
-        title: title.trim(),
-        description: desc.trim(),
-        questions,
-        expiresAt: expiresAt ? expiresAt.toISOString() : null,
-        anonymous,
+        title: parsed.data.title,
+        description: parsed.data.description,
+        questions: parsed.data.questions,
+        expiresAt: parsed.data.expiresAt.toISOString(),
+        anonymous: parsed.data.anonymous,
       });
       toast.success("Poll updated!");
       onOpenChange(false);

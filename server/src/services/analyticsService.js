@@ -110,12 +110,24 @@ export const buildAnalytics = async (poll, options = {}) => {
   const participationRate =
     totalResponses > 0 ? Math.round((fullParticipants / totalResponses) * 100) : 0;
 
+  const timelineCounts = responses.reduce((counts, response) => {
+    const submittedAt = response.submittedAt || response.createdAt || new Date();
+    const key = new Date(submittedAt).toISOString().slice(0, 10);
+    counts[key] = (counts[key] || 0) + 1;
+    return counts;
+  }, {});
+
+  const responseTimeline = Object.entries(timelineCounts)
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([date, count]) => ({ date, count }));
+
   return {
     pollId: poll._id,
     pollTitle: poll.title,
     totalResponses,
     fullParticipants,
     participationRate,
+    responseTimeline,
     questionSummaries,
     generatedAt: new Date().toISOString(),
   };

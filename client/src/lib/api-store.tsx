@@ -16,6 +16,10 @@ export type RespondentInfo = {
   selectedOptionId: string;
   selectedOptionText: string;
 };
+export type ResponsePoint = {
+  date: string;
+  count: number;
+};
 export type Question = {
   id: string;
   text: string;
@@ -34,6 +38,7 @@ export type Poll = {
   status: "draft" | "active" | "expired" | "published";
   responses: number;
   resultsPublic: boolean;
+  responseHistory: ResponsePoint[];
 };
 
 type User = { id?: string; name: string; email: string; role?: "user" | "admin" } | null;
@@ -95,6 +100,7 @@ type ApiPoll = {
 
 type ApiAnalytics = {
   totalResponses: number;
+  responseTimeline: ResponsePoint[];
   questionSummaries: Array<{
     questionId: string;
     options: Array<{ optionId: string; votes: number }>;
@@ -179,6 +185,7 @@ const mapPoll = (poll: ApiPoll, analytics?: ApiAnalytics): Poll => {
         : "active",
     responses: analytics?.totalResponses || 0,
     resultsPublic: poll.resultsPublished,
+    responseHistory: analytics?.responseTimeline || [],
     questions: poll.questions.map((question) => {
       const qs = analytics?.questionSummaries.find(
         (s) => s.questionId === question._id

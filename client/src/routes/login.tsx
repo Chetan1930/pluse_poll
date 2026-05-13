@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useStore } from "@/lib/api-store";
+import { getFirstValidationMessage, loginFormSchema } from "@/lib/validation";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/login")({
@@ -71,12 +72,15 @@ function Login() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!/^\S+@\S+\.\S+$/.test(email)) return toast.error("Enter a valid email");
-    if (!pw) return toast.error("Password is required");
+
+    const parsed = loginFormSchema.safeParse({ email, password: pw });
+    if (!parsed.success) {
+      return toast.error(getFirstValidationMessage(parsed.error));
+    }
 
     setLoading(true);
     try {
-      await login(email, pw);
+      await login(parsed.data.email, parsed.data.password);
       toast.success("Welcome back!");
       navigate({ to: (redirect as any) || "/dashboard" });
     } catch (err) {

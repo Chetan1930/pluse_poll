@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, Link, useRouterState, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Outlet, Link, useRouterState, useNavigate, useSearch } from "@tanstack/react-router";
 import {
   BarChart3,
   LayoutDashboard,
@@ -102,9 +102,16 @@ function DashLayout() {
   const { user, isHydrated, theme, toggleTheme } = useAuth();
   const navigate = useNavigate();
   const path = useRouterState({ select: (s) => s.location.pathname });
+  const isOverview = path === "/dashboard" || path === "/dashboard/";
+  const routeSearch = useSearch({ strict: false }) as { q?: string };
+  const headerQ = isOverview ? (routeSearch.q ?? "") : "";
   const searchRef = useRef<HTMLInputElement>(null);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [themeRotating, setThemeRotating] = useState(false);
+
+  const handleHeaderSearch = (value: string) => {
+    navigate({ to: "/dashboard", search: (prev) => ({ ...prev, q: value }), replace: true });
+  };
 
   // Derive breadcrumb from path
   const segments = path.split("/").filter(Boolean);
@@ -184,6 +191,8 @@ function DashLayout() {
                 <Input
                   ref={searchRef}
                   placeholder="Search polls..."
+                  value={headerQ}
+                  onChange={(e) => handleHeaderSearch(e.target.value)}
                   className="h-9 pl-9 pr-16 text-sm rounded-xl bg-background/60 border-border/70 focus-visible:ring-primary/30"
                 />
                 <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center gap-0.5 rounded-md border border-border/60 bg-muted/50 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground/70 pointer-events-none">
@@ -272,6 +281,8 @@ function DashLayout() {
                   <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
                   <Input
                     placeholder="Search polls..."
+                    value={headerQ}
+                    onChange={(e) => handleHeaderSearch(e.target.value)}
                     className="h-9 pl-9 text-sm rounded-xl bg-background/80"
                     autoFocus
                   />
