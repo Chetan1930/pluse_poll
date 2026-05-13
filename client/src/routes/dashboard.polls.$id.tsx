@@ -11,11 +11,13 @@ import { usePollSocket, type PollUpdatedPayload } from "@/hooks/use-poll-socket"
 import {
   ArrowLeft,
   BarChart3,
+  ChevronDown,
   Globe2,
   Pencil,
   Share2,
   Trash2,
   Trophy,
+  UserCheck,
   Users,
   Wifi,
   Zap,
@@ -43,6 +45,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 export const Route = createFileRoute("/dashboard/polls/$id")({
   head: () => ({
@@ -74,6 +81,7 @@ function Analytics() {
   const [liveQuestions, setLiveQuestions] = useState<Question[]>(poll?.questions ?? []);
   const [isLive, setIsLive] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [fetchError, setFetchError] = useState(false);
 
   // Keep live state in sync when poll loads from API
   useEffect(() => {
@@ -86,9 +94,11 @@ function Analytics() {
 
   // Fetch poll on mount
   useEffect(() => {
-    getPoll(id).catch((error) =>
-      toast.error(error instanceof Error ? error.message : "Unable to load poll"),
-    );
+    setFetchError(false);
+    getPoll(id).catch((error) => {
+      setFetchError(true);
+      toast.error(error instanceof Error ? error.message : "Unable to load poll");
+    });
   }, [getPoll, id]);
 
   // Real-time socket updates
@@ -109,9 +119,25 @@ function Analytics() {
         };
       }),
     );
-  }, []);
+
+    // Refresh data for non-anonymous polls to get updated respondent list
+    if (poll && !poll.anonymous) {
+      getPoll(id);
+    }
+  }, [poll, getPoll, id]);
 
   usePollSocket(id, handleSocketUpdate);
+
+  if (!poll && !fetchError) {
+    return (
+      <div className="max-w-2xl mx-auto text-center py-20">
+        <div className="mx-auto h-12 w-12 rounded-2xl gradient-primary flex items-center justify-center shadow-elegant mb-4">
+          <BarChart3 className="h-6 w-6 text-primary-foreground animate-pulse" />
+        </div>
+        <p className="text-muted-foreground">Loading poll...</p>
+      </div>
+    );
+  }
 
   if (!poll) {
     return (
@@ -394,6 +420,45 @@ function Analytics() {
                     );
                   })}
                 </div>
+
+                {/* Voters list — only for non-anonymous polls */}
+                {!poll.anonymous && q.respondents && q.respondents.length > 0 && (
+                  <Collapsible className="mt-4 border-t pt-4">
+                    <CollapsibleTrigger className="flex w-full items-center justify-between group">
+                      <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                        <UserCheck className="h-4 w-4" />
+                        <span>Voters ({q.respondents.length})</span>
+                      </div>
+                      <ChevronDown className="h-4 w-4 text-muted-foreground group-data-[state=open]:rotate-180 transition-transform" />
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="mt-3">
+                      <div className="space-y-1.5">
+                        {q.respondents.map((r) => (
+                          <div
+                            key={r.userId}
+                            className="flex items-center justify-between rounded-lg border border-border/50 bg-muted/20 px-3 py-2 text-sm"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <div className="h-6 w-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-medium shrink-0">
+                                {r.name.charAt(0).toUpperCase()}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="truncate font-medium">{r.name}</p>
+                                <p className="text-xs text-muted-foreground truncate">{r.email}</p>
+                              </div>
+                            </div>
+                            <Badge
+                              variant="outline"
+                              className="ml-2 shrink-0 text-xs bg-primary/5 border-primary/20"
+                            >
+                              {r.selectedOptionText}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                )}
               </Card>
             </motion.div>
           );

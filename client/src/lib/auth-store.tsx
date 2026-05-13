@@ -1,5 +1,4 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { apiRequest } from "@/lib/api";
 
 type User = { _id?: string; id?: string; name: string; email: string } | null;
 
@@ -46,27 +45,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setTheme(t);
     document.documentElement.classList.toggle("dark", t === "dark");
 
-    apiRequest<{ user: NonNullable<User> }>("/auth/me")
-      .then(({ user }) => {
-        localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
-        localStorage.removeItem(LEGACY_TOKEN_KEY);
-        setUserState(user);
-      })
-      .catch(() => {
-        localStorage.removeItem(AUTH_USER_KEY);
-        localStorage.removeItem(LEGACY_TOKEN_KEY);
-        setUserState(null);
-      })
-      .finally(() => setIsHydrated(true));
-
+    // isHydrated is set when api-store completes its /auth/me check and dispatches
+    // the AUTH_CHANGED_EVENT — this avoids a duplicate /auth/me call.
     const handleAuthChange = (event: Event) => {
       const detail = (event as CustomEvent<User>).detail;
       if (detail !== undefined) {
         setUserState(detail);
-        return;
+      } else {
+        syncStoredUser();
       }
-
-      syncStoredUser();
+      setIsHydrated(true);
     };
 
     window.addEventListener(AUTH_CHANGED_EVENT, handleAuthChange);

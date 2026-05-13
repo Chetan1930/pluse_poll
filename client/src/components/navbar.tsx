@@ -34,7 +34,7 @@ export function Navbar({ variant = "marketing" }: { variant?: "marketing" | "app
                 </Link>
               </>
             ) : (
-              <Link to="/signup" className="hover:text-foreground transition">
+              <Link to="/signup" search={{ redirect: "" }} className="hover:text-foreground transition">
                 Create poll
               </Link>
             )}
@@ -60,12 +60,12 @@ export function Navbar({ variant = "marketing" }: { variant?: "marketing" | "app
                 <>
                   {!path.startsWith("/login") && (
                     <Button variant="ghost" asChild className="rounded-xl">
-                      <Link to="/login">Sign in</Link>
+                      <Link to="/login" search={{ redirect: "" }}>Sign in</Link>
                     </Button>
                   )}
                   {!path.startsWith("/signup") && (
                     <Button asChild className="gradient-primary shadow-elegant border-0 rounded-xl">
-                      <Link to="/signup">Get started</Link>
+                      <Link to="/signup" search={{ redirect: "" }}>Get started</Link>
                     </Button>
                   )}
                 </>

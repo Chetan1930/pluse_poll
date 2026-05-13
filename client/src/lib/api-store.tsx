@@ -9,11 +9,19 @@ const LEGACY_TOKEN_KEY = "pp_token";
 const AUTH_CHANGED_EVENT = "pulsepoll:auth-changed";
 
 export type PollOption = { id: string; text: string; votes: number };
+export type RespondentInfo = {
+  userId: string;
+  name: string;
+  email: string;
+  selectedOptionId: string;
+  selectedOptionText: string;
+};
 export type Question = {
   id: string;
   text: string;
   required: boolean;
   options: PollOption[];
+  respondents?: RespondentInfo[];
 };
 export type Poll = {
   id: string;
@@ -92,6 +100,13 @@ type ApiAnalytics = {
   questionSummaries: Array<{
     questionId: string;
     options: Array<{ optionId: string; votes: number }>;
+    respondents?: Array<{
+      userId: string;
+      name: string;
+      email: string;
+      selectedOptionId: string;
+      selectedOptionText: string;
+    }>;
   }>;
 };
 
@@ -167,16 +182,28 @@ const mapPoll = (poll: ApiPoll, analytics?: ApiAnalytics): Poll => {
     responses: analytics?.totalResponses || 0,
     resultsPublic: poll.resultsPublished,
     participationRate: analytics?.participationRate ?? 0,
-    questions: poll.questions.map((question) => ({
-      id: question._id,
-      text: question.text,
-      required: question.required,
-      options: question.options.map((option) => ({
-        id: option._id,
-        text: option.text,
-        votes: voteMap.get(String(option._id)) || 0,
-      })),
-    })),
+    questions: poll.questions.map((question) => {
+      const qs = analytics?.questionSummaries.find(
+        (s) => s.questionId === question._id
+      );
+      return {
+        id: question._id,
+        text: question.text,
+        required: question.required,
+        options: question.options.map((option) => ({
+          id: option._id,
+          text: option.text,
+          votes: voteMap.get(String(option._id)) || 0,
+        })),
+        respondents: qs?.respondents?.map((r) => ({
+          userId: r.userId,
+          name: r.name,
+          email: r.email,
+          selectedOptionId: r.selectedOptionId,
+          selectedOptionText: r.selectedOptionText,
+        })),
+      };
+    }),
   };
 };
 
@@ -250,7 +277,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       })
       .catch(() => {
         setUser(null);
-        setPolls([]);
         persistAuthUser(null);
       })
       .finally(() => setAuthReady(true));

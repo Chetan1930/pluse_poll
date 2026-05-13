@@ -1,11 +1,18 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import { useStore } from "@/lib/api-store";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, Clock, BarChart3, ArrowRight } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { CheckCircle2, Clock, BarChart3, ArrowRight, LogIn, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -18,16 +25,19 @@ export const Route = createFileRoute("/p/$id")({
 
 function PublicPoll() {
   const { id } = Route.useParams();
-  const { polls, getPoll, vote } = useStore();
-  const poll = polls.find((p) => p.id === id);
+  const navigate = useNavigate();
+  const { getPoll, vote } = useStore();
+  const [poll, setPoll] = useState<import("@/lib/api-store").Poll | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
-  const [loading, setLoading] = useState(!poll);
+  const [loading, setLoading] = useState(true);
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
 
   useEffect(() => {
     setLoading(true);
     getPoll(id)
-      .catch(() => undefined)
+      .then(setPoll)
+      .catch(() => setPoll(null))
       .finally(() => setLoading(false));
   }, [getPoll, id]);
 
@@ -113,6 +123,8 @@ function PublicPoll() {
       if (msg.toLowerCase().includes("already submitted")) {
         setSubmitted(true);
         toast.info("You've already responded to this poll.");
+      } else if (msg.toLowerCase().includes("authentication") || msg.toLowerCase().includes("sign in")) {
+        setShowAuthPrompt(true);
       } else {
         toast.error(msg);
       }
@@ -201,6 +213,43 @@ function PublicPoll() {
           </Button>
         </div>
       </div>
+
+      {/* Auth prompt dialog */}
+      <Dialog open={showAuthPrompt} onOpenChange={setShowAuthPrompt}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl">Sign in to respond</DialogTitle>
+            <DialogDescription className="text-sm mt-2">
+              This poll requires you to be signed in. Choose an option below to continue.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 mt-2">
+            <Button
+              size="lg"
+              className="gradient-primary border-0 shadow-elegant h-12 w-full"
+              onClick={() => {
+                setShowAuthPrompt(false);
+                navigate({ to: "/login", search: { redirect: `/p/${id}` } });
+              }}
+            >
+              <LogIn className="h-4 w-4 mr-2" />
+              Sign in
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              className="h-12 w-full"
+              onClick={() => {
+                setShowAuthPrompt(false);
+                navigate({ to: "/signup", search: { redirect: `/p/${id}` } });
+              }}
+            >
+              <UserPlus className="h-4 w-4 mr-2" />
+              Create an account
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

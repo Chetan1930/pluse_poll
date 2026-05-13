@@ -38,28 +38,26 @@ const COLORS = [
 
 function Results() {
   const { id } = Route.useParams();
-  const { polls, getPoll } = useStore();
-  const poll = polls.find((p) => p.id === id);
-  const [loading, setLoading] = useState(!poll);
+  const { getPoll } = useStore();
+  const [poll, setPoll] = useState<import("@/lib/api-store").Poll | null>(null);
+  const [loading, setLoading] = useState(true);
 
   // Live state updated by socket
-  const [liveResp, setLiveResp] = useState(poll?.responses ?? 0);
-  const [liveQuestions, setLiveQuestions] = useState<Question[]>(poll?.questions ?? []);
+  const [liveResp, setLiveResp] = useState(0);
+  const [liveQuestions, setLiveQuestions] = useState<Question[]>([]);
   const [isLive, setIsLive] = useState(false);
 
   useEffect(() => {
     setLoading(true);
     getPoll(id)
-      .catch(() => undefined)
+      .then((p) => {
+        setPoll(p);
+        setLiveResp(p.responses);
+        setLiveQuestions(p.questions);
+      })
+      .catch(() => setPoll(null))
       .finally(() => setLoading(false));
   }, [getPoll, id]);
-
-  useEffect(() => {
-    if (poll) {
-      setLiveResp(poll.responses);
-      setLiveQuestions(poll.questions);
-    }
-  }, [poll]);
 
   const handleSocketUpdate = useCallback((payload: PollUpdatedPayload) => {
     setIsLive(true);

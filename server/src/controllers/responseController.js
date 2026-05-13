@@ -68,6 +68,7 @@ export const submitResponse = async (req, res, next) => {
     const responseDoc = await Response.create({
       pollId: poll._id,
       userId: req.user?._id || null,
+      ipAddress: req.user ? null : req.ip || req.socket?.remoteAddress || null,
       answers: answers.map((a) => ({
         questionId: new mongoose.Types.ObjectId(a.questionId),
         selectedOption: new mongoose.Types.ObjectId(a.selectedOption),
@@ -109,8 +110,11 @@ export const getAnalytics = async (req, res, next) => {
       return sendError(res, HTTP_STATUS.FORBIDDEN, 'Results have not been published yet');
     }
 
-    const analytics = await buildAnalytics(poll);
-    return sendSuccess(res, HTTP_STATUS.OK, { analytics });
+    // Only include individual respondent data for the owner of a non-anonymous poll
+    const includeRespondents = isOwner && !poll.allowAnonymousResponses;
+
+    const analytics = await buildAnalytics(poll, { includeRespondents });
+    return sendSuccess(res, HTTP_STATUS.OK, { analytics, isOwner });
   } catch (error) {
     next(error);
   }
