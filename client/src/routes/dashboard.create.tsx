@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
+import { format } from "date-fns";
 import { useStore, type Question } from "@/lib/api-store";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -9,6 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   ArrowDown,
   ArrowUp,
@@ -17,9 +20,11 @@ import {
   Trash2,
   X,
   Eye,
-  Calendar,
+  CalendarIcon,
+  Clock,
   Save,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/dashboard/create")({
@@ -52,7 +57,8 @@ function CreatePoll() {
   const [title, setTitle] = useState("");
   const [desc, setDesc] = useState("");
   const [anonymous, setAnonymous] = useState(true);
-  const [expiresAt, setExpiresAt] = useState<string>("");
+  const [expiresAt, setExpiresAt] = useState<Date | undefined>(undefined);
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const [questions, setQuestions] = useState<Question[]>([emptyQuestion()]);
 
   const updateQ = (id: string, patch: Partial<Question>) =>
@@ -81,6 +87,8 @@ function CreatePoll() {
 
   const validate = () => {
     if (!title.trim()) return "Add a poll title";
+    if (!expiresAt) return "Please choose an expiry date";
+    if (expiresAt <= new Date()) return "Expiry date must be in the future";
     for (const q of questions) {
       if (!q.text.trim()) return "All questions need text";
       if (q.options.length < 2) return "Each question needs ≥ 2 options";
@@ -97,7 +105,7 @@ function CreatePoll() {
         title: title.trim(),
         description: desc.trim(),
         questions,
-        expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
+        expiresAt: expiresAt ? expiresAt.toISOString() : null,
         anonymous,
       });
       toast.success("Poll created!");
@@ -272,16 +280,77 @@ function CreatePoll() {
               <Switch checked={anonymous} onCheckedChange={setAnonymous} />
             </div>
             <div>
-              <Label className="flex items-center gap-1.5">
-                <Calendar className="h-3.5 w-3.5" /> Expires at
+              <Label className="flex items-center gap-1.5 mb-1.5">
+                <CalendarIcon className="h-3.5 w-3.5" />
+                Expiry date
+                <span className="text-destructive">*</span>
               </Label>
-              <Input
-                type="datetime-local"
-                value={expiresAt}
-                onChange={(e) => setExpiresAt(e.target.value)}
-                className="mt-1.5"
-              />
-              <p className="text-xs text-muted-foreground mt-1">Leave empty for no expiry.</p>
+              <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !expiresAt && "text-muted-foreground",
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+                    {expiresAt ? format(expiresAt, "MMM d, yyyy · h:mm a") : "Pick a date & time"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={expiresAt}
+                    onSelect={(date) => {
+                      if (!date) return;
+                      const next = new Date(date);
+                      if (expiresAt) {
+                        next.setHours(expiresAt.getHours(), expiresAt.getMinutes());
+                      } else {
+                        next.setHours(23, 59);
+                      }
+                      setExpiresAt(next);
+                    }}
+                    disabled={{ before: new Date() }}
+                    initialFocus
+                  />
+                  <div className="border-t border-border px-3 pb-3 pt-2">
+                    <Label className="text-xs text-muted-foreground flex items-center gap-1.5 mb-1.5">
+                      <Clock className="h-3 w-3" /> Time
+                    </Label>
+                    <Input
+                      type="time"
+                      value={
+                        expiresAt
+                          ? `${String(expiresAt.getHours()).padStart(2, "0")}:${String(expiresAt.getMinutes()).padStart(2, "0")}`
+                          : ""
+                      }
+                      onChange={(e) => {
+                        const [h, m] = e.target.value.split(":").map(Number);
+                        const base = expiresAt ?? new Date();
+                        const next = new Date(base);
+                        next.setHours(h, m);
+                        setExpiresAt(next);
+                      }}
+                      className="h-8 text-sm"
+                    />
+                    {expiresAt && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="mt-2 w-full h-7 text-xs text-muted-foreground"
+                        onClick={() => { setExpiresAt(undefined); setCalendarOpen(false); }}
+                      >
+                        Clear
+                      </Button>
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
+              <p className="text-xs text-destructive mt-1.5 flex items-center gap-1">
+                Required — all polls must have an expiry.
+              </p>
             </div>
           </Card>
 

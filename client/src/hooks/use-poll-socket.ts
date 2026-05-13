@@ -18,8 +18,6 @@ export type LiveQuestion = {
 
 export type LiveAnalytics = {
   totalResponses: number;
-  participationRate: number;
-  fullParticipants: number;
   questionSummaries: LiveQuestion[];
 };
 

@@ -34,7 +34,6 @@ export type Poll = {
   status: "draft" | "active" | "expired" | "published";
   responses: number;
   resultsPublic: boolean;
-  participationRate: number;
 };
 
 type User = { id?: string; name: string; email: string; role?: "user" | "admin" } | null;
@@ -96,7 +95,6 @@ type ApiPoll = {
 
 type ApiAnalytics = {
   totalResponses: number;
-  participationRate: number;
   questionSummaries: Array<{
     questionId: string;
     options: Array<{ optionId: string; votes: number }>;
@@ -181,7 +179,6 @@ const mapPoll = (poll: ApiPoll, analytics?: ApiAnalytics): Poll => {
         : "active",
     responses: analytics?.totalResponses || 0,
     resultsPublic: poll.resultsPublished,
-    participationRate: analytics?.participationRate ?? 0,
     questions: poll.questions.map((question) => {
       const qs = analytics?.questionSummaries.find(
         (s) => s.questionId === question._id

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { format } from "date-fns";
 import { AnimatePresence, motion } from "framer-motion";
 import { type Poll, type Question, useStore } from "@/lib/api-store";
 import { Button } from "@/components/ui/button";
@@ -8,13 +9,16 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ArrowDown, ArrowUp, GripVertical, Plus, Save, Trash2, X } from "lucide-react";
+import { ArrowDown, ArrowUp, CalendarIcon, Clock, GripVertical, Plus, Save, Trash2, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 const uid = () => Math.random().toString(36).slice(2, 9);
@@ -30,9 +34,10 @@ export function EditPollDialog({ poll, open, onOpenChange }: EditPollDialogProps
   const [title, setTitle] = useState(poll.title);
   const [desc, setDesc] = useState(poll.description);
   const [anonymous, setAnonymous] = useState(poll.anonymous);
-  const [expiresAt, setExpiresAt] = useState(
-    poll.expiresAt ? new Date(poll.expiresAt).toISOString().slice(0, 16) : "",
+  const [expiresAt, setExpiresAt] = useState<Date | undefined>(
+    poll.expiresAt ? new Date(poll.expiresAt) : undefined,
   );
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const [questions, setQuestions] = useState<Question[]>(poll.questions);
   const [saving, setSaving] = useState(false);
 
@@ -63,6 +68,7 @@ export function EditPollDialog({ poll, open, onOpenChange }: EditPollDialogProps
 
   const validate = () => {
     if (!title.trim()) return "Poll title is required";
+    if (!expiresAt) return "Please choose an expiry date";
     for (const q of questions) {
       if (!q.text.trim()) return "All questions must have text";
       if (q.options.length < 2) return "Each question needs at least 2 options";
@@ -80,7 +86,7 @@ export function EditPollDialog({ poll, open, onOpenChange }: EditPollDialogProps
         title: title.trim(),
         description: desc.trim(),
         questions,
-        expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
+        expiresAt: expiresAt ? expiresAt.toISOString() : null,
         anonymous,
       });
       toast.success("Poll updated!");
@@ -122,14 +128,77 @@ export function EditPollDialog({ poll, open, onOpenChange }: EditPollDialogProps
               <Switch checked={anonymous} onCheckedChange={setAnonymous} />
             </div>
             <div>
-              <Label>Expires at</Label>
-              <Input
-                type="datetime-local"
-                value={expiresAt}
-                onChange={(e) => setExpiresAt(e.target.value)}
-                className="mt-1.5"
-              />
-              <p className="text-xs text-muted-foreground mt-1">Leave empty for no expiry.</p>
+              <Label className="flex items-center gap-1.5 mb-1.5">
+                <CalendarIcon className="h-3.5 w-3.5" />
+                Expiry date
+                <span className="text-destructive">*</span>
+              </Label>
+              <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !expiresAt && "text-muted-foreground",
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+                    {expiresAt ? format(expiresAt, "MMM d, yyyy · h:mm a") : "Pick a date & time"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={expiresAt}
+                    onSelect={(date) => {
+                      if (!date) return;
+                      const next = new Date(date);
+                      if (expiresAt) {
+                        next.setHours(expiresAt.getHours(), expiresAt.getMinutes());
+                      } else {
+                        next.setHours(23, 59);
+                      }
+                      setExpiresAt(next);
+                    }}
+                    disabled={{ before: new Date() }}
+                    initialFocus
+                  />
+                  <div className="border-t border-border px-3 pb-3 pt-2">
+                    <Label className="text-xs text-muted-foreground flex items-center gap-1.5 mb-1.5">
+                      <Clock className="h-3 w-3" /> Time
+                    </Label>
+                    <Input
+                      type="time"
+                      value={
+                        expiresAt
+                          ? `${String(expiresAt.getHours()).padStart(2, "0")}:${String(expiresAt.getMinutes()).padStart(2, "0")}`
+                          : ""
+                      }
+                      onChange={(e) => {
+                        const [h, m] = e.target.value.split(":").map(Number);
+                        const base = expiresAt ?? new Date();
+                        const next = new Date(base);
+                        next.setHours(h, m);
+                        setExpiresAt(next);
+                      }}
+                      className="h-8 text-sm"
+                    />
+                    {expiresAt && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="mt-2 w-full h-7 text-xs text-muted-foreground"
+                        onClick={() => { setExpiresAt(undefined); setCalendarOpen(false); }}
+                      >
+                        Clear
+                      </Button>
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
+              <p className="text-xs text-destructive mt-1.5">
+                Required — all polls must have an expiry.
+              </p>
             </div>
           </div>
 

@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useStore, type Question } from "@/lib/api-store";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -12,6 +12,7 @@ import {
   ArrowLeft,
   BarChart3,
   ChevronDown,
+  Clock,
   Globe2,
   Pencil,
   Share2,
@@ -20,7 +21,6 @@ import {
   UserCheck,
   Users,
   Wifi,
-  Zap,
 } from "lucide-react";
 import {
   Bar,
@@ -61,6 +61,18 @@ export const Route = createFileRoute("/dashboard/polls/$id")({
   component: Analytics,
 });
 
+function getTimeLeft(expiresAt: string | null | undefined): string {
+  if (!expiresAt) return "No expiry";
+  const diff = new Date(expiresAt).getTime() - Date.now();
+  if (diff <= 0) return "Expired";
+  const mins = Math.floor(diff / 60_000);
+  if (mins < 60) return `${mins}m left`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ${mins % 60}m left`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ${hours % 24}h left`;
+}
+
 const COLORS = [
   "var(--color-chart-1)",
   "var(--color-chart-2)",
@@ -77,7 +89,6 @@ function Analytics() {
 
   // Live state updated by both initial load and socket events
   const [liveResp, setLiveResp] = useState(poll?.responses ?? 0);
-  const [liveRate, setLiveRate] = useState(poll?.participationRate ?? 0);
   const [liveQuestions, setLiveQuestions] = useState<Question[]>(poll?.questions ?? []);
   const [isLive, setIsLive] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -87,10 +98,25 @@ function Analytics() {
   useEffect(() => {
     if (poll) {
       setLiveResp(poll.responses);
-      setLiveRate(poll.participationRate);
       setLiveQuestions(poll.questions);
     }
   }, [poll]);
+
+  // Time-remaining ticker — updates every minute
+  const [timeLeft, setTimeLeft] = useState(() => getTimeLeft(poll?.expiresAt));
+  useEffect(() => {
+    setTimeLeft(getTimeLeft(poll?.expiresAt));
+    const t = setInterval(() => setTimeLeft(getTimeLeft(poll?.expiresAt)), 60_000);
+    return () => clearInterval(t);
+  }, [poll?.expiresAt]);
+
+  const timeAccent = useMemo(() => {
+    if (!poll?.expiresAt) return "primary" as const;
+    const diff = new Date(poll.expiresAt).getTime() - Date.now();
+    if (diff <= 0) return "destructive" as const;
+    if (diff < 3_600_000) return "warning" as const;
+    return "primary" as const;
+  }, [poll?.expiresAt, timeLeft]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch poll on mount
   useEffect(() => {
@@ -105,7 +131,6 @@ function Analytics() {
   const handleSocketUpdate = useCallback((payload: PollUpdatedPayload) => {
     setIsLive(true);
     setLiveResp(payload.totalResponses);
-    setLiveRate(payload.analytics.participationRate);
     setLiveQuestions((prev) =>
       prev.map((q) => {
         const qs = payload.analytics.questionSummaries.find((s) => s.questionId === q.id);
@@ -280,10 +305,10 @@ function Analytics() {
           trend={isLive ? "Live" : "Loaded"}
         />
         <StatsCard
-          label="Participation rate"
-          value={`${liveRate}%`}
-          icon={Zap}
-          accent="success"
+          label="Time remaining"
+          value={timeLeft}
+          icon={Clock}
+          accent={timeAccent}
           delay={0.05}
         />
         <StatsCard

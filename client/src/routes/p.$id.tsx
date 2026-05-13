@@ -34,6 +34,15 @@ function PublicPoll() {
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
 
   useEffect(() => {
+    const stored = localStorage.getItem(`pp_vote_${id}`);
+    if (stored) {
+      try {
+        setAnswers(JSON.parse(stored));
+        setSubmitted(true);
+      } catch {
+        // ignore malformed entry
+      }
+    }
     setLoading(true);
     getPoll(id)
       .then(setPoll)
@@ -117,10 +126,12 @@ function PublicPoll() {
     }
     try {
       await vote(poll.id, answers);
+      localStorage.setItem(`pp_vote_${poll.id}`, JSON.stringify(answers));
       setSubmitted(true);
     } catch (error) {
       const msg = error instanceof Error ? error.message : "Unable to submit response";
       if (msg.toLowerCase().includes("already submitted")) {
+        localStorage.setItem(`pp_vote_${poll.id}`, JSON.stringify(answers));
         setSubmitted(true);
         toast.info("You've already responded to this poll.");
       } else if (msg.toLowerCase().includes("authentication") || msg.toLowerCase().includes("sign in")) {
