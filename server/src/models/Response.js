@@ -27,6 +27,11 @@ const responseSchema = new mongoose.Schema(
       ref: 'User',
       default: null,
     },
+    // Captured for anonymous responses to prevent duplicate votes
+    ipAddress: {
+      type: String,
+      default: null,
+    },
     answers: {
       type: [answerSchema],
       validate: {
@@ -42,10 +47,16 @@ const responseSchema = new mongoose.Schema(
   { timestamps: false }
 );
 
-// Prevent a single user from submitting more than once
+// Prevent a single authenticated user from submitting more than once
 responseSchema.index(
   { pollId: 1, userId: 1 },
   { unique: true, partialFilterExpression: { userId: { $ne: null } } }
+);
+
+// Prevent the same anonymous IP from submitting more than once
+responseSchema.index(
+  { pollId: 1, ipAddress: 1 },
+  { unique: true, partialFilterExpression: { ipAddress: { $ne: null } } }
 );
 
 const Response = mongoose.model('Response', responseSchema);

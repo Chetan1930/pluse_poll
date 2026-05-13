@@ -3,9 +3,12 @@ import http from 'http';
 import net from 'net';
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
 
 import connectDB from './config/db.js';
+import { getAllowedOrigins, isProduction, validateEnv } from './config/env.js';
 import { initSocket } from './socket/index.js';
 import errorHandler from './middleware/error.js';
 
@@ -15,17 +18,42 @@ import responseRoutes from './routes/responseRoutes.js';
 
 const app = express();
 const httpServer = http.createServer(app);
+const allowedOrigins = getAllowedOrigins();
+const createCorsError = (origin) => {
+  const error = new Error(`Origin ${origin} is not allowed by CORS`);
+  error.statusCode = 403;
+  return error;
+};
 
-// ─── Socket.IO ────────────────────────────────────────────────────────────────
+// ─── Socket.IO ────────
 initSocket(httpServer);
 
-// ─── Global Middleware ────────────────────────────────────────────────────────
+//Global Middleware 
+app.disable('x-powered-by');
+app.set('trust proxy', process.env.TRUST_PROXY === 'true' ? 1 : false);
+app.use(helmet());
 app.use(
   cors({
-    origin: process.env.CLIENT_URL?.split(',').map((o) => o.trim()) || 'http://localhost:5173',
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(createCorsError(origin));
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
+  })
+);
+app.use(
+  rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: Number(process.env.RATE_LIMIT_MAX) || 300,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { success: false, message: 'Too many requests, please try again later' },
   })
 );
 app.use(express.json({ limit: '1mb' }));
@@ -87,9 +115,10 @@ const findAvailablePort = async (startPort, maxAttempts = 10) => {
 
 const startServer = async () => {
   try {
+    validateEnv();
     await connectDB();
 
-    const port = await findAvailablePort(DEFAULT_PORT);
+    const port = isProduction ? DEFAULT_PORT : await findAvailablePort(DEFAULT_PORT);
 
     if (port !== DEFAULT_PORT) {
       console.warn(`Port ${DEFAULT_PORT} is busy. Starting PulsePoll on port ${port} instead.`);
@@ -103,6 +132,22 @@ const startServer = async () => {
     process.exit(1);
   }
 };
+
+httpServer.on('error', (error) => {
+  console.error(`Server runtime error: ${error.message}`);
+  process.exit(1);
+});
+
+const shutdown = (signal) => {
+  console.log(`${signal} received. Closing HTTP server...`);
+  httpServer.close(() => {
+    console.log('HTTP server closed.');
+    process.exit(0);
+  });
+};
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
 
 startServer();
 

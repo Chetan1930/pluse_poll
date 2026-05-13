@@ -2,12 +2,21 @@ import User from '../models/User.js';
 import { signToken } from '../utils/jwt.js';
 import { sendSuccess, sendError } from '../utils/response.js';
 import { HTTP_STATUS, JWT_COOKIE_NAME } from '../config/constants.js';
+import { isProduction } from '../config/env.js';
 
 const COOKIE_OPTIONS = {
   httpOnly: true,
-  secure: process.env.COOKIE_SECURE === 'true',
-  sameSite: 'strict',
+  secure: process.env.COOKIE_SECURE ? process.env.COOKIE_SECURE === 'true' : isProduction,
+  sameSite: process.env.COOKIE_SAME_SITE || (isProduction ? 'none' : 'lax'),
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
+  ...(process.env.COOKIE_DOMAIN ? { domain: process.env.COOKIE_DOMAIN } : {}),
+};
+
+const CLEAR_COOKIE_OPTIONS = {
+  httpOnly: COOKIE_OPTIONS.httpOnly,
+  secure: COOKIE_OPTIONS.secure,
+  sameSite: COOKIE_OPTIONS.sameSite,
+  ...(process.env.COOKIE_DOMAIN ? { domain: process.env.COOKIE_DOMAIN } : {}),
 };
 
 const attachTokenCookie = (res, token) => {
@@ -28,7 +37,7 @@ export const register = async (req, res, next) => {
 
     attachTokenCookie(res, token);
 
-    return sendSuccess(res, HTTP_STATUS.CREATED, { user: user.toSafeObject(), token }, 'Registration successful');
+    return sendSuccess(res, HTTP_STATUS.CREATED, { user: user.toSafeObject() }, 'Registration successful');
   } catch (error) {
     next(error);
   }
@@ -51,14 +60,14 @@ export const login = async (req, res, next) => {
     const token = signToken({ id: user._id });
     attachTokenCookie(res, token);
 
-    return sendSuccess(res, HTTP_STATUS.OK, { user: user.toSafeObject(), token }, 'Login successful');
+    return sendSuccess(res, HTTP_STATUS.OK, { user: user.toSafeObject() }, 'Login successful');
   } catch (error) {
     next(error);
   }
 };
 
 export const logout = (req, res) => {
-  res.clearCookie(JWT_COOKIE_NAME);
+  res.clearCookie(JWT_COOKIE_NAME, CLEAR_COOKIE_OPTIONS);
   return sendSuccess(res, HTTP_STATUS.OK, {}, 'Logged out successfully');
 };
 

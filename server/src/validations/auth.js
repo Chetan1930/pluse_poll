@@ -1,31 +1,34 @@
-const isValidEmail = (email) => /^\S+@\S+\.\S+$/.test(email);
+import { z } from 'zod';
 
-export const registerSchema = {
-  name: (v) => {
-    if (!v || !v.trim()) return 'Name is required';
-    if (v.trim().length > 80) return 'Name cannot exceed 80 characters';
-    return null;
-  },
-  email: (v) => {
-    if (!v || !v.trim()) return 'Email is required';
-    if (!isValidEmail(v.trim())) return 'Please provide a valid email';
-    return null;
-  },
-  password: (v) => {
-    if (!v) return 'Password is required';
-    if (v.length < 6) return 'Password must be at least 6 characters';
-    return null;
-  },
-};
+const emailSchema = z
+  .string({ required_error: 'Email is required' })
+  .trim()
+  .min(1, 'Email is required')
+  .email('Please provide a valid email')
+  .toLowerCase();
 
-export const loginSchema = {
-  email: (v) => {
-    if (!v || !v.trim()) return 'Email is required';
-    if (!isValidEmail(v.trim())) return 'Please provide a valid email';
-    return null;
-  },
-  password: (v) => {
-    if (!v) return 'Password is required';
-    return null;
-  },
-};
+const passwordSchema = z
+  .string({ required_error: 'Password is required' })
+  .min(8, 'Password must be at least 8 characters')
+  .regex(/\d/, 'Password must contain at least one number');
+
+export const registerSchema = z
+  .object({
+    name: z
+      .string({ required_error: 'Name is required' })
+      .trim()
+      .min(1, 'Name is required')
+      .max(80, 'Name cannot exceed 80 characters'),
+    email: emailSchema,
+    password: passwordSchema,
+  })
+  .strict();
+
+export const loginSchema = z
+  .object({
+    email: emailSchema,
+    password: z
+      .string({ required_error: 'Password is required' })
+      .min(1, 'Password is required'),
+  })
+  .strict();

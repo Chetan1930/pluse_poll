@@ -34,6 +34,20 @@ export const getMyPolls = async (req, res, next) => {
   }
 };
 
+/** Admin only — returns every poll across all users with creator details. */
+export const getAllPollsAdmin = async (req, res, next) => {
+  try {
+    const polls = await Poll.find({})
+      .populate('createdBy', 'name email role')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return sendSuccess(res, HTTP_STATUS.OK, { polls, count: polls.length });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getPollById = async (req, res, next) => {
   try {
     const poll = await Poll.findById(req.params.id).populate('createdBy', 'name email');

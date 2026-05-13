@@ -1,13 +1,21 @@
-export const submitResponseSchema = {
-  answers: (v) => {
-    if (!Array.isArray(v) || v.length < 1) return 'Answers array is required';
+import { z } from 'zod';
 
-    for (let i = 0; i < v.length; i++) {
-      const a = v[i];
-      if (!a.questionId) return `Answer ${i + 1}: questionId is required`;
-      if (!a.selectedOption) return `Answer ${i + 1}: selectedOption is required`;
-    }
+const objectIdSchema = z
+  .string({ required_error: 'ID is required' })
+  .trim()
+  .regex(/^[0-9a-fA-F]{24}$/, 'Must be a valid MongoDB ObjectId');
 
-    return null;
-  },
-};
+export const submitResponseSchema = z
+  .object({
+    answers: z
+      .array(
+        z
+          .object({
+            questionId: objectIdSchema,
+            selectedOption: objectIdSchema,
+          })
+          .strict()
+      )
+      .min(1, 'Answers array is required'),
+  })
+  .strict();

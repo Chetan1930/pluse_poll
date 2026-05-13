@@ -1,80 +1,93 @@
+import { z } from 'zod';
 import { MIN_OPTIONS_PER_QUESTION } from '../config/constants.js';
 
-export const createPollSchema = {
-  title: (v) => {
-    if (!v || !v.trim()) return 'Title is required';
-    if (v.trim().length > 200) return 'Title cannot exceed 200 characters';
-    return null;
+const normalizedDateSchema = z.preprocess(
+  (value) => {
+    if (value === '' || value === undefined) return null;
+    return value;
   },
-  description: (v) => {
-    if (v && v.length > 1000) return 'Description cannot exceed 1000 characters';
-    return null;
-  },
-  questions: (v) => {
-    if (!Array.isArray(v) || v.length < 1) return 'At least one question is required';
+  z.coerce.date({ invalid_type_error: 'expiresAt must be a valid date' }).nullable()
+);
 
-    for (let i = 0; i < v.length; i++) {
-      const q = v[i];
-      if (!q.text || !q.text.trim()) return `Question ${i + 1}: text is required`;
-      if (!Array.isArray(q.options) || q.options.length < MIN_OPTIONS_PER_QUESTION) {
-        return `Question ${i + 1}: must have at least ${MIN_OPTIONS_PER_QUESTION} options`;
-      }
-      for (let j = 0; j < q.options.length; j++) {
-        const opt = q.options[j];
-        if (!opt.text || !opt.text.trim()) {
-          return `Question ${i + 1}, option ${j + 1}: text is required`;
-        }
-      }
+const futureDateSchema = normalizedDateSchema.refine(
+  (value) => value === null || value > new Date(),
+  'expiresAt must be in the future'
+);
+
+const optionSchema = z
+  .object({
+    text: z
+      .string({ required_error: 'Option text is required' })
+      .trim()
+      .min(1, 'Option text is required')
+      .max(200, 'Option text cannot exceed 200 characters'),
+  })
+  .strict();
+
+const questionSchema = z
+  .object({
+    text: z
+      .string({ required_error: 'Question text is required' })
+      .trim()
+      .min(1, 'Question text is required')
+      .max(500, 'Question text cannot exceed 500 characters'),
+    options: z
+      .array(optionSchema)
+      .min(
+        MIN_OPTIONS_PER_QUESTION,
+        `Each question must have at least ${MIN_OPTIONS_PER_QUESTION} options`
+      ),
+    required: z.boolean().optional().default(false),
+  })
+  .strict()
+  .superRefine((question, ctx) => {
+    const normalizedOptions = question.options.map((option) => option.text.toLowerCase());
+    const hasDuplicateOptions = normalizedOptions.some(
+      (option, index) => normalizedOptions.indexOf(option) !== index
+    );
+
+    if (hasDuplicateOptions) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Question options must be unique',
+        path: ['options'],
+      });
     }
+  });
 
-    return null;
-  },
-  expiresAt: (v) => {
-    if (v !== undefined && v !== null && v !== '') {
-      const date = new Date(v);
-      if (isNaN(date.getTime())) return 'expiresAt must be a valid date';
-      if (date <= new Date()) return 'expiresAt must be in the future';
-    }
-    return null;
-  },
-};
+export const createPollSchema = z
+  .object({
+    title: z
+      .string({ required_error: 'Title is required' })
+      .trim()
+      .min(1, 'Title is required')
+      .max(200, 'Title cannot exceed 200 characters'),
+    description: z
+      .string()
+      .trim()
+      .max(1000, 'Description cannot exceed 1000 characters')
+      .optional()
+      .default(''),
+    questions: z.array(questionSchema).min(1, 'At least one question is required'),
+    allowAnonymousResponses: z.boolean().optional().default(true),
+    expiresAt: futureDateSchema.optional().default(null),
+  })
+  .strict();
 
-// Partial schema for update — same rules but all optional
-export const updatePollSchema = {
-  title: (v) => {
-    if (v !== undefined && (!v || !v.trim())) return 'Title cannot be empty';
-    if (v && v.trim().length > 200) return 'Title cannot exceed 200 characters';
-    return null;
-  },
-  description: (v) => {
-    if (v && v.length > 1000) return 'Description cannot exceed 1000 characters';
-    return null;
-  },
-  questions: (v) => {
-    if (v === undefined) return null;
-    if (!Array.isArray(v) || v.length < 1) return 'At least one question is required';
-
-    for (let i = 0; i < v.length; i++) {
-      const q = v[i];
-      if (!q.text || !q.text.trim()) return `Question ${i + 1}: text is required`;
-      if (!Array.isArray(q.options) || q.options.length < MIN_OPTIONS_PER_QUESTION) {
-        return `Question ${i + 1}: must have at least ${MIN_OPTIONS_PER_QUESTION} options`;
-      }
-      for (let j = 0; j < q.options.length; j++) {
-        const opt = q.options[j];
-        if (!opt.text || !opt.text.trim()) {
-          return `Question ${i + 1}, option ${j + 1}: text is required`;
-        }
-      }
-    }
-
-    return null;
-  },
-  expiresAt: (v) => {
-    if (v !== undefined && v !== null && v !== '') {
-      const date = new Date(v);
-      if (isNaN(date.getTime())) return 'expiresAt must be a valid date';
-    }
-    return null;
-  },
-};
+export const updatePollSchema = z
+  .object({
+    title: z
+      .string()
+      .trim()
+      .min(1, 'Title cannot be empty')
+      .max(200, 'Title cannot exceed 200 characters')
+      .optional(),
+    description: z.string().trim().max(1000, 'Description cannot exceed 1000 characters').optional(),
+    questions: z.array(questionSchema).min(1, 'At least one question is required').optional(),
+    allowAnonymousResponses: z.boolean().optional(),
+    expiresAt: futureDateSchema.optional(),
+  })
+  .strict()
+  .refine((value) => Object.keys(value).length > 0, {
+    message: 'At least one field is required',
+  });
