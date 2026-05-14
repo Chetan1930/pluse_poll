@@ -65,10 +65,16 @@ export const submitResponse = async (req, res, next) => {
       }
     }
 
+    // Only capture IP address if the poll has IP tracking enabled and user is anonymous
+    const capturedIp =
+      poll.trackIp && !req.user
+        ? req.ip || req.socket?.remoteAddress || null
+        : null;
+
     const responseDoc = await Response.create({
       pollId: poll._id,
       userId: req.user?._id || null,
-      ipAddress: req.user ? null : req.ip || req.socket?.remoteAddress || null,
+      ipAddress: capturedIp,
       answers: answers.map((a) => ({
         questionId: new mongoose.Types.ObjectId(a.questionId),
         selectedOption: new mongoose.Types.ObjectId(a.selectedOption),
@@ -112,8 +118,10 @@ export const getAnalytics = async (req, res, next) => {
 
     // Only include individual respondent data for the owner of a non-anonymous poll
     const includeRespondents = isOwner && !poll.allowAnonymousResponses;
+    // Include IP addresses for the owner when IP tracking is enabled
+    const includeIpAddresses = isOwner && poll.trackIp;
 
-    const analytics = await buildAnalytics(poll, { includeRespondents });
+    const analytics = await buildAnalytics(poll, { includeRespondents, includeIpAddresses });
     return sendSuccess(res, HTTP_STATUS.OK, { analytics, isOwner });
   } catch (error) {
     next(error);

@@ -70,6 +70,7 @@ export const createPollSchema = z
       .default(''),
     questions: z.array(questionSchema).min(1, 'At least one question is required'),
     allowAnonymousResponses: z.boolean().optional().default(true),
+    trackIp: z.boolean().optional().default(false),
     expiresAt: futureDateSchema.optional().default(null),
   })
   .strict();
@@ -85,6 +86,7 @@ export const updatePollSchema = z
     description: z.string().trim().max(1000, 'Description cannot exceed 1000 characters').optional(),
     questions: z.array(questionSchema).min(1, 'At least one question is required').optional(),
     allowAnonymousResponses: z.boolean().optional(),
+    trackIp: z.boolean().optional(),
     expiresAt: futureDateSchema.optional(),
   })
   .strict()

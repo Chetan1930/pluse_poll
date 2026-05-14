@@ -79,6 +79,11 @@ const pollSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    // When true, track IP addresses to prevent duplicate votes from the same network
+    trackIp: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );

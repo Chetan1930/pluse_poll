@@ -16,6 +16,7 @@ import {
   Globe2,
   Pencil,
   Share2,
+  ShieldAlert,
   Trash2,
   Trophy,
   UserCheck,
@@ -218,6 +219,12 @@ function Analytics() {
                 {poll.status}
               </Badge>
               {poll.anonymous && <Badge variant="outline">Anonymous</Badge>}
+              {poll.trackIp && (
+                <Badge variant="outline" className="bg-warning/15 text-warning border-warning/20 flex items-center gap-1">
+                  <ShieldAlert className="h-3 w-3" />
+                  IP tracking
+                </Badge>
+              )}
               {isLive && (
                 <Badge className="bg-destructive/15 text-destructive border-destructive/20 flex items-center gap-1">
                   <span className="relative flex h-2 w-2">
@@ -522,8 +529,8 @@ function Analytics() {
                   })}
                 </div>
 
-                {/* Voters list — only for non-anonymous polls */}
-                {!poll.anonymous && q.respondents && q.respondents.length > 0 && (
+                {/* Voters list — for non-anonymous polls OR when IP tracking is enabled */}
+                {q.respondents && q.respondents.length > 0 && (!poll.anonymous || poll.trackIp) && (
                   <Collapsible className="mt-4 border-t pt-4">
                     <CollapsibleTrigger className="flex w-full items-center justify-between group">
                       <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
@@ -536,7 +543,7 @@ function Analytics() {
                       <div className="space-y-1.5">
                         {q.respondents.map((r) => (
                           <div
-                            key={r.userId}
+                            key={r.userId || r.ipAddress}
                             className="flex items-center justify-between rounded-lg border border-border/50 bg-muted/20 px-3 py-2 text-sm"
                           >
                             <div className="flex items-center gap-2 min-w-0">
@@ -545,7 +552,16 @@ function Analytics() {
                               </div>
                               <div className="min-w-0">
                                 <p className="truncate font-medium">{r.name}</p>
-                                <p className="text-xs text-muted-foreground truncate">{r.email}</p>
+                                <p className="text-xs text-muted-foreground truncate">
+                                  {r.ipAddress ? (
+                                    <span className="flex items-center gap-1">
+                                      <ShieldAlert className="h-3 w-3 text-warning" />
+                                      {r.email || r.ipAddress}
+                                    </span>
+                                  ) : (
+                                    r.email
+                                  )}
+                                </p>
                               </div>
                             </div>
                             <Badge

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { registerSchema } from '../src/validations/auth.js';
-import { createPollSchema } from '../src/validations/poll.js';
+import { createPollSchema, updatePollSchema } from '../src/validations/poll.js';
 import { submitResponseSchema } from '../src/validations/response.js';
 
 test('register schema trims and normalizes user data', () => {
@@ -59,4 +59,71 @@ test('response schema rejects malformed object ids', () => {
       }),
     /Must be a valid MongoDB ObjectId/
   );
+});
+
+test('poll schema defaults trackIp to false', () => {
+  const parsed = createPollSchema.parse({
+    title: 'Test poll',
+    questions: [
+      {
+        text: 'Favorite color?',
+        options: [{ text: 'Red' }, { text: 'Blue' }],
+      },
+    ],
+  });
+
+  assert.equal(parsed.trackIp, false);
+});
+
+test('poll schema accepts trackIp set to true', () => {
+  const parsed = createPollSchema.parse({
+    title: 'Test poll',
+    questions: [
+      {
+        text: 'Favorite color?',
+        options: [{ text: 'Red' }, { text: 'Blue' }],
+      },
+    ],
+    trackIp: true,
+  });
+
+  assert.equal(parsed.trackIp, true);
+});
+
+test('update poll schema accepts trackIp', () => {
+  const parsed = updatePollSchema.parse({
+    trackIp: true,
+  });
+
+  assert.equal(parsed.trackIp, true);
+});
+
+test('update poll schema accepts trackIp set to false', () => {
+  const parsed = updatePollSchema.parse({
+    trackIp: false,
+  });
+
+  assert.equal(parsed.trackIp, false);
+});
+
+test('poll schema accepts all new fields together', () => {
+  const parsed = createPollSchema.parse({
+    title: 'Comprehensive test',
+    description: 'Testing all fields',
+    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    questions: [
+      {
+        text: 'How are you?',
+        options: [{ text: 'Good' }, { text: 'Great' }],
+        required: true,
+      },
+    ],
+    allowAnonymousResponses: false,
+    trackIp: true,
+  });
+
+  assert.equal(parsed.trackIp, true);
+  assert.equal(parsed.allowAnonymousResponses, false);
+  assert.ok(parsed.expiresAt instanceof Date);
+  assert.equal(parsed.questions.length, 1);
 });

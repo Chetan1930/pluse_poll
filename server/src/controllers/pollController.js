@@ -5,7 +5,7 @@ import { HTTP_STATUS } from '../config/constants.js';
 
 export const createPoll = async (req, res, next) => {
   try {
-    const { title, description, questions, allowAnonymousResponses, expiresAt } = req.body;
+    const { title, description, questions, allowAnonymousResponses, expiresAt, trackIp } = req.body;
 
     const poll = await Poll.create({
       title,
@@ -13,6 +13,7 @@ export const createPoll = async (req, res, next) => {
       questions,
       allowAnonymousResponses,
       expiresAt: expiresAt || null,
+      trackIp: trackIp || false,
       createdBy: req.user._id,
     });
 
@@ -77,7 +78,7 @@ export const updatePoll = async (req, res, next) => {
       return sendError(res, HTTP_STATUS.NOT_FOUND, 'Poll not found');
     }
 
-    const allowedFields = ['title', 'description', 'questions', 'allowAnonymousResponses', 'expiresAt'];
+    const allowedFields = ['title', 'description', 'questions', 'allowAnonymousResponses', 'expiresAt', 'trackIp'];
     allowedFields.forEach((field) => {
       if (req.body[field] !== undefined) {
         poll[field] = req.body[field];

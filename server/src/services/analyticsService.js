@@ -10,7 +10,7 @@ import Response from '../models/Response.js';
  * @returns {Promise<object>}
  */
 export const buildAnalytics = async (poll, options = {}) => {
-  const { includeRespondents = false } = options;
+  const { includeRespondents = false, includeIpAddresses = false } = options;
 
   // Fetch responses — populate user data when including respondents
   let responsesQuery = Response.find({ pollId: poll._id });
@@ -51,13 +51,35 @@ export const buildAnalytics = async (poll, options = {}) => {
 
         // Capture respondent info if requested and user exists
         if (includeRespondents && response.userId) {
-          respondents.push({
+          const respondent = {
             userId: response.userId._id || response.userId,
             name: response.userId.name || 'Unknown',
             email: response.userId.email || '',
             selectedOptionId: key,
             selectedOptionText: optionTextMap[key] || 'Unknown',
-          });
+          };
+          // Include IP address for owner-only view when IP tracking is enabled
+          if (includeIpAddresses && response.ipAddress) {
+            respondent.ipAddress = response.ipAddress;
+          }
+          respondents.push(respondent);
+        }
+
+        // For anonymous polls with IP tracking, still capture IP info for the owner
+        if (includeIpAddresses && !response.userId && response.ipAddress) {
+          const existing = respondents.find(
+            (r) => r.ipAddress === response.ipAddress && r.selectedOptionId === key
+          );
+          if (!existing) {
+            respondents.push({
+              userId: null,
+              name: 'Anonymous',
+              email: '',
+              selectedOptionId: key,
+              selectedOptionText: optionTextMap[key] || 'Unknown',
+              ipAddress: response.ipAddress,
+            });
+          }
         }
       }
     });
@@ -88,7 +110,7 @@ export const buildAnalytics = async (poll, options = {}) => {
       totalAnswered: answeredCount,
       options,
       mostSelected: mostSelected || null,
-      ...(includeRespondents && { respondents }),
+      ...((includeRespondents || includeIpAddresses) && { respondents }),
     };
   });
 

@@ -166,7 +166,7 @@ function Signup() {
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                     <Input
                       id="name"
-                      placeholder="Ada Lovelace"
+                      placeholder="Chetan Chauhan"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       className="pl-10 h-11 transition-shadow focus-visible:ring-2 focus-visible:ring-primary/30"
@@ -185,7 +185,7 @@ function Signup() {
                     <Input
                       id="email"
                       type="email"
-                      placeholder="you@company.com"
+                      placeholder="admin@chetan.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="pl-10 h-11 transition-shadow focus-visible:ring-2 focus-visible:ring-primary/30"
@@ -423,7 +423,17 @@ function Signup() {
           </div>
         </div>
 
-        <div className="relative text-sm text-primary-foreground/60">&copy; 2026 PulsePoll</div>
+        <div className="relative text-sm text-primary-foreground/60">
+          Created by{" "}
+          <a
+            href="https://linkedin.com/in/chetan71"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-primary-foreground/80 hover:text-white transition-colors underline underline-offset-2 decoration-white/20"
+          >
+            Chetan
+          </a>
+        </div>
       </div>
     </div>
   );

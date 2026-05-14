@@ -12,12 +12,20 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ArrowDown, ArrowUp, CalendarIcon, Clock, GripVertical, Plus, Save, Trash2, X } from "lucide-react";
+import { ArrowDown, ArrowUp, CalendarIcon, Clock, GripVertical, Plus, Save, ShieldAlert, Trash2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getFirstValidationMessage, pollBuilderSchema } from "@/lib/validation";
 import { toast } from "sonner";
@@ -35,6 +43,8 @@ export function EditPollDialog({ poll, open, onOpenChange }: EditPollDialogProps
   const [title, setTitle] = useState(poll.title);
   const [desc, setDesc] = useState(poll.description);
   const [anonymous, setAnonymous] = useState(poll.anonymous);
+  const [trackIp, setTrackIp] = useState(poll.trackIp);
+  const [showIpConfirm, setShowIpConfirm] = useState(false);
   const [expiresAt, setExpiresAt] = useState<Date | undefined>(
     poll.expiresAt ? new Date(poll.expiresAt) : undefined,
   );
@@ -67,6 +77,19 @@ export function EditPollDialog({ poll, open, onOpenChange }: EditPollDialogProps
     });
   };
 
+  const handleTrackIpToggle = () => {
+    if (!trackIp) {
+      setShowIpConfirm(true);
+    } else {
+      setTrackIp(false);
+    }
+  };
+
+  const confirmTrackIp = () => {
+    setTrackIp(true);
+    setShowIpConfirm(false);
+  };
+
   const handleSave = async () => {
     const parsed = pollBuilderSchema.safeParse({
       title,
@@ -88,6 +111,7 @@ export function EditPollDialog({ poll, open, onOpenChange }: EditPollDialogProps
         questions: parsed.data.questions,
         expiresAt: parsed.data.expiresAt.toISOString(),
         anonymous: parsed.data.anonymous,
+        trackIp,
       });
       toast.success("Poll updated!");
       onOpenChange(false);
@@ -126,6 +150,16 @@ export function EditPollDialog({ poll, open, onOpenChange }: EditPollDialogProps
                 <p className="text-xs text-muted-foreground">No login required to respond</p>
               </div>
               <Switch checked={anonymous} onCheckedChange={setAnonymous} />
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <div>
+                <p className="font-medium flex items-center gap-1.5">
+                  <ShieldAlert className="h-3.5 w-3.5" />
+                  IP tracking
+                </p>
+                <p className="text-xs text-muted-foreground">Block duplicate votes from the same network</p>
+              </div>
+              <Switch checked={trackIp} onCheckedChange={handleTrackIpToggle} />
             </div>
             <div>
               <Label className="flex items-center gap-1.5 mb-1.5">
@@ -342,6 +376,38 @@ export function EditPollDialog({ poll, open, onOpenChange }: EditPollDialogProps
             </Button>
           </div>
         </div>
+        {/* IP tracking confirmation dialog */}
+        <AlertDialog open={showIpConfirm} onOpenChange={setShowIpConfirm}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <ShieldAlert className="h-5 w-5 text-destructive" />
+                Enable IP tracking?
+              </AlertDialogTitle>
+              <AlertDialogDescription className="space-y-2">
+                <p>
+                  When enabled, we'll track respondents by their IP address to prevent multiple votes
+                  from the same network connection.
+                </p>
+                <p className="font-medium text-foreground">
+                  Users connected to the same WiFi will be blocked from voting more than once.
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  You can change this setting anytime.
+                </p>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <Button variant="outline" onClick={() => setShowIpConfirm(false)}>
+                Cancel
+              </Button>
+              <Button variant="destructive" onClick={confirmTrackIp}>
+                <ShieldAlert className="h-4 w-4 mr-1.5" />
+                Yes, enable tracking
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </DialogContent>
     </Dialog>
   );

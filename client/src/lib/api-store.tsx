@@ -10,11 +10,12 @@ const AUTH_CHANGED_EVENT = "pulsepoll:auth-changed";
 
 export type PollOption = { id: string; text: string; votes: number };
 export type RespondentInfo = {
-  userId: string;
+  userId: string | null;
   name: string;
   email: string;
   selectedOptionId: string;
   selectedOptionText: string;
+  ipAddress?: string;
 };
 export type ResponsePoint = {
   date: string;
@@ -35,6 +36,7 @@ export type Poll = {
   createdAt: string;
   expiresAt: string | null;
   anonymous: boolean;
+  trackIp: boolean;
   status: "draft" | "active" | "expired" | "published";
   responses: number;
   resultsPublic: boolean;
@@ -68,6 +70,7 @@ export type NewPollInput = {
   questions: Question[];
   expiresAt: string | null;
   anonymous: boolean;
+  trackIp?: boolean;
 };
 
 type ApiEnvelope<T> = {
@@ -94,6 +97,7 @@ type ApiPoll = {
   createdAt: string;
   expiresAt?: string | null;
   allowAnonymousResponses: boolean;
+  trackIp?: boolean;
   isPublished: boolean;
   resultsPublished: boolean;
 };
@@ -105,11 +109,12 @@ type ApiAnalytics = {
     questionId: string;
     options: Array<{ optionId: string; votes: number }>;
     respondents?: Array<{
-      userId: string;
+      userId: string | null;
       name: string;
       email: string;
       selectedOptionId: string;
       selectedOptionText: string;
+      ipAddress?: string;
     }>;
   }>;
 };
@@ -178,6 +183,7 @@ const mapPoll = (poll: ApiPoll, analytics?: ApiAnalytics): Poll => {
     createdAt: poll.createdAt,
     expiresAt: poll.expiresAt || null,
     anonymous: poll.allowAnonymousResponses,
+    trackIp: poll.trackIp || false,
     status: expired
       ? "expired"
       : poll.resultsPublished || poll.isPublished
@@ -205,6 +211,7 @@ const mapPoll = (poll: ApiPoll, analytics?: ApiAnalytics): Poll => {
           email: r.email,
           selectedOptionId: r.selectedOptionId,
           selectedOptionText: r.selectedOptionText,
+          ...(r.ipAddress ? { ipAddress: r.ipAddress } : {}),
         })),
       };
     }),
@@ -216,6 +223,7 @@ const toPollPayload = (poll: NewPollInput | Partial<Poll>) => ({
   description: poll.description,
   expiresAt: poll.expiresAt || null,
   allowAnonymousResponses: "anonymous" in poll ? poll.anonymous : undefined,
+  trackIp: "trackIp" in poll ? poll.trackIp : undefined,
   questions: poll.questions?.map((question) => ({
     text: question.text,
     required: question.required,
