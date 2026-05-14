@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import { useStore } from "@/lib/api-store";
 import { Card } from "@/components/ui/card";
@@ -29,19 +29,22 @@ function PublicPoll() {
   const navigate = useNavigate();
   const { getPoll, vote } = useStore();
   const draftStorageKey = `pp_vote_draft_${id}`;
+  const votedStorageKey = `pp_voted_${id}`;
   const [poll, setPoll] = useState<import("@/lib/api-store").Poll | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [submitted, setSubmitted] = useState(false);
+  const [submitted, setSubmitted] = useState(() => !!localStorage.getItem(`pp_voted_${id}`));
   const [loading, setLoading] = useState(true);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem(draftStorageKey);
-    if (stored) {
-      try {
-        setAnswers(JSON.parse(stored));
-      } catch {
-        localStorage.removeItem(draftStorageKey);
+    if (!submitted) {
+      const stored = localStorage.getItem(draftStorageKey);
+      if (stored) {
+        try {
+          setAnswers(JSON.parse(stored));
+        } catch {
+          localStorage.removeItem(draftStorageKey);
+        }
       }
     }
     setLoading(true);
@@ -49,7 +52,7 @@ function PublicPoll() {
       .then(setPoll)
       .catch(() => setPoll(null))
       .finally(() => setLoading(false));
-  }, [draftStorageKey, getPoll, id]);
+  }, [draftStorageKey, getPoll, id, submitted]);
 
   useEffect(() => {
     if (submitted) {
@@ -71,6 +74,35 @@ function PublicPoll() {
     return (
       <Centered>
         <h2 className="text-2xl font-bold">Loading poll...</h2>
+      </Centered>
+    );
+  }
+
+  if (submitted) {
+    return (
+      <Centered>
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: "spring", duration: 0.6 }}
+          className="h-16 w-16 mx-auto rounded-2xl gradient-primary text-primary-foreground flex items-center justify-center shadow-elegant"
+        >
+          <CheckCircle2 className="h-8 w-8" />
+        </motion.div>
+        <h2 className="text-3xl font-bold mt-4">Thanks for your answer!</h2>
+        <p className="text-muted-foreground mt-1">Your response has been recorded.</p>
+        <div className="mt-6 flex justify-center gap-2">
+          {poll?.resultsPublic && (
+            <Button asChild className="gradient-primary border-0">
+              <Link to="/r/$id" params={{ id: poll.id }}>
+                See live results
+              </Link>
+            </Button>
+          )}
+          <Button variant="outline" asChild>
+            <Link to="/">Back home</Link>
+          </Button>
+        </div>
       </Centered>
     );
   }
@@ -106,35 +138,6 @@ function PublicPoll() {
     );
   }
 
-  if (submitted) {
-    return (
-      <Centered>
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: "spring", duration: 0.6 }}
-          className="h-16 w-16 mx-auto rounded-2xl gradient-primary text-primary-foreground flex items-center justify-center shadow-elegant"
-        >
-          <CheckCircle2 className="h-8 w-8" />
-        </motion.div>
-        <h2 className="text-3xl font-bold mt-4">Thanks for your answer!</h2>
-        <p className="text-muted-foreground mt-1">Your response has been recorded.</p>
-        <div className="mt-6 flex justify-center gap-2">
-          {poll.resultsPublic && (
-            <Button asChild className="gradient-primary border-0">
-              <Link to="/r/$id" params={{ id: poll.id }}>
-                See live results
-              </Link>
-            </Button>
-          )}
-          <Button variant="outline" asChild>
-            <Link to="/">Back home</Link>
-          </Button>
-        </div>
-      </Centered>
-    );
-  }
-
   const submit = async () => {
     const requiredQuestionIds = poll.questions
       .filter((question) => question.required)
@@ -150,11 +153,13 @@ function PublicPoll() {
     try {
       await vote(poll.id, parsed.data.answers);
       localStorage.removeItem(draftStorageKey);
+      localStorage.setItem(votedStorageKey, "1");
       setSubmitted(true);
     } catch (error) {
       const msg = error instanceof Error ? error.message : "Unable to submit response";
       if (msg.toLowerCase().includes("already submitted")) {
         localStorage.removeItem(draftStorageKey);
+        localStorage.setItem(votedStorageKey, "1");
         setSubmitted(true);
         toast.info("You've already responded to this poll.");
       } else if (msg.toLowerCase().includes("authentication") || msg.toLowerCase().includes("sign in")) {
