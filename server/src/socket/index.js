@@ -63,8 +63,6 @@ export const initSocket = (httpServer) => {
   });
 
   io.on('connection', (socket) => {
-    console.log(`[Socket] Client connected: ${socket.id}`);
-
     /**
      * Client emits join_poll with { pollId } to start receiving
      * realtime updates for that poll's room.
@@ -96,7 +94,6 @@ export const initSocket = (httpServer) => {
 
         const room = `poll:${pollId}`;
         socket.join(room);
-        console.log(`[Socket] ${socket.id} joined room ${room}`);
         socket.emit('joined', { pollId, room, isOwner: Boolean(isOwner) });
       } catch (error) {
         console.error(`[Socket] Failed to join poll ${pollId}:`, error);
@@ -109,13 +106,7 @@ export const initSocket = (httpServer) => {
      */
     socket.on('leave_poll', ({ pollId }) => {
       if (!pollId) return;
-      const room = `poll:${pollId}`;
-      socket.leave(room);
-      console.log(`[Socket] ${socket.id} left room ${room}`);
-    });
-
-    socket.on('disconnect', (reason) => {
-      console.log(`[Socket] Client disconnected: ${socket.id} — ${reason}`);
+      socket.leave(`poll:${pollId}`);
     });
   });
 

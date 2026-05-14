@@ -100,6 +100,7 @@ type ApiPoll = {
   trackIp?: boolean;
   isPublished: boolean;
   resultsPublished: boolean;
+  responseCount?: number;
 };
 
 type ApiAnalytics = {
@@ -189,7 +190,7 @@ const mapPoll = (poll: ApiPoll, analytics?: ApiAnalytics): Poll => {
       : poll.resultsPublished || poll.isPublished
         ? "published"
         : "active",
-    responses: analytics?.totalResponses || 0,
+    responses: analytics?.totalResponses ?? poll.responseCount ?? 0,
     resultsPublic: poll.resultsPublished,
     responseHistory: analytics?.responseTimeline || [],
     questions: poll.questions.map((question) => {
@@ -253,14 +254,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setLoadingPolls(true);
     try {
       const { polls: apiPolls } = await apiRequest<{ polls: ApiPoll[] }>("/polls/my");
-      const mapped = await Promise.all(
-        apiPolls.map(async (poll) => mapPoll(poll, await getAnalytics(poll._id))),
-      );
-      setPolls(mapped);
+      setPolls(apiPolls.map((poll) => mapPoll(poll)));
     } finally {
       setLoadingPolls(false);
     }
-  }, [getAnalytics]);
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -296,7 +294,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return () => {
       window.removeEventListener(AUTH_CHANGED_EVENT, handleAuthChange);
     };
-  }, [refreshPolls]);
+    // refreshPolls is stable (useCallback with no deps)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const login = async (email: string, password: string) => {
     const { user } = await apiRequest<{ user: ApiUser }>("/auth/login", {
@@ -345,7 +345,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       method: "PUT",
       body: JSON.stringify(toPollPayload(patch)),
     });
-    const mapped = mapPoll(poll, await getAnalytics(id));
+    const existing = polls.find((p) => p.id === id);
+    const analytics = existing ? await getAnalytics(id) : undefined;
+    const mapped = mapPoll(poll, analytics);
     setPolls((current) => current.map((item) => (item.id === id ? mapped : item)));
     return mapped;
   };

@@ -81,6 +81,9 @@ export const submitResponse = async (req, res, next) => {
       })),
     });
 
+    // Keep denormalized count in sync
+    await Poll.findByIdAndUpdate(poll._id, { $inc: { responseCount: 1 } });
+
     // Emit realtime update to all clients watching this poll
     const io = getIO();
     if (io) {

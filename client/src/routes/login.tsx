@@ -16,7 +16,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useStore } from "@/lib/api-store";
 import { getFirstValidationMessage, loginFormSchema } from "@/lib/validation";
 import { toast } from "sonner";
@@ -61,14 +60,15 @@ function Login() {
   const [show, setShow] = useState(false);
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
-  const [remember, setRemember] = useState(true);
   const [loading, setLoading] = useState(false);
+
+  const safeDest = (redirect && redirect.startsWith("/") ? redirect : "/dashboard") as "/dashboard";
 
   useEffect(() => {
     if (authReady && user) {
-      navigate({ to: (redirect as any) || "/dashboard" });
+      navigate({ to: safeDest });
     }
-  }, [user, authReady, navigate, redirect]);
+  }, [user, authReady, navigate, safeDest]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,7 +82,7 @@ function Login() {
     try {
       await login(parsed.data.email, parsed.data.password);
       toast.success("Welcome back!");
-      navigate({ to: (redirect as any) || "/dashboard" });
+      navigate({ to: safeDest });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Unable to sign in");
     } finally {
@@ -278,12 +278,6 @@ function Login() {
                 <motion.div variants={stagger.item}>
                   <div className="flex items-center justify-between">
                     <Label htmlFor="pw">Password</Label>
-                    <button
-                      type="button"
-                      className="text-xs text-muted-foreground hover:text-primary transition-colors"
-                    >
-                      Forgot password?
-                    </button>
                   </div>
                   <div className="relative mt-1.5">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
@@ -305,19 +299,6 @@ function Login() {
                     >
                       {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
-                  </div>
-                </motion.div>
-
-                <motion.div variants={stagger.item}>
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      id="remember"
-                      checked={remember}
-                      onCheckedChange={(v) => setRemember(v === true)}
-                    />
-                    <Label htmlFor="remember" className="text-sm font-normal cursor-pointer">
-                      Remember me
-                    </Label>
                   </div>
                 </motion.div>
 
@@ -353,7 +334,7 @@ function Login() {
                 No account?{" "}
                 <Link
                   to="/signup"
-                  search={redirect ? ({ redirect } as any) : undefined}
+                  search={redirect ? { redirect } : undefined}
                   className="text-primary font-semibold hover:underline inline-flex items-center gap-0.5 group"
                 >
                   Sign up

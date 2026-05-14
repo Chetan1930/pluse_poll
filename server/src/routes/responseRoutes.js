@@ -14,8 +14,7 @@ const responseLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, message: 'Too many submissions, please try again later' },
-  // Skip rate limiting for authenticated users (owners testing their polls)
-  skip: (req) => !!req.user,
+  skip: (req) => req.user?.role === 'admin',
 });
 
 // Submit a response — auth optional (anonymous responses allowed based on poll settings)

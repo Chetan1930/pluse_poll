@@ -84,12 +84,14 @@ function Signup() {
   const [errs, setErrs] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
 
+  const safeDest = (redirect && redirect.startsWith("/") ? redirect : "/dashboard") as "/dashboard";
+
   // Redirect authenticated users away from signup page
   useEffect(() => {
     if (authReady && user) {
-      navigate({ to: (redirect as any) || "/dashboard" });
+      navigate({ to: safeDest });
     }
-  }, [user, authReady, navigate, redirect]);
+  }, [user, authReady, navigate, safeDest]);
 
   const strength = passwordStrength(pw);
 
@@ -113,7 +115,7 @@ function Signup() {
     try {
       await register(parsed.data.name, parsed.data.email, parsed.data.password);
       toast.success("Account created — welcome!");
-      navigate({ to: (redirect as any) || "/dashboard" });
+      navigate({ to: safeDest });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Unable to create account");
     } finally {

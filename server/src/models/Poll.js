@@ -84,6 +84,12 @@ const pollSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    // Denormalized response count — incremented on each new response for fast dashboard queries
+    responseCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
   },
   { timestamps: true }
 );
@@ -92,6 +98,9 @@ const pollSchema = new mongoose.Schema(
 pollSchema.methods.isExpired = function () {
   return this.expiresAt && new Date() > new Date(this.expiresAt);
 };
+
+pollSchema.index({ createdBy: 1 });
+pollSchema.index({ createdAt: -1 });
 
 const Poll = mongoose.model('Poll', pollSchema);
 export default Poll;
